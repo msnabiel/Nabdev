@@ -1,0 +1,509 @@
+---
+title: Linked Lists
+description: Master linked lists in C++ with implementation, reversal, cycle detection, fast-slow pointers, and advanced problems like merging, palindrome check, and more.
+---
+
+Linked lists are a dynamic data structure used when the number of elements is unknown or frequently changing. Let’s explore how they work, how to implement them, and the powerful techniques and problems associated.
+
+## 1. Basics & Structure
+
+A linked list node contains data and a pointer to the next node.
+
+```cpp
+struct Node {
+    int data;
+    Node* next;
+
+    Node(int val) {
+        data = val;
+        next = nullptr;
+    }
+};
+```
+
+## 2. Insertion & Traversal
+
+### Insert at head
+Inserts a new node with the given value at the beginning of the linked list.
+```cpp
+Node* insertAtHead(Node* head, int val) {
+    Node* newNode = new Node(val);  // Create a new node with the given value
+    newNode->next = head;           // Set the new node's next to the current head
+    return newNode;                 // Return the new node as the new head
+}
+```
+### Insert at tail
+Inserts a new node with the given value at the end of the linked list.
+```cpp
+Node* insertAtTail(Node* head, int val) {
+    Node* newNode = new Node(val);  // Create a new node with the given value
+    if (!head) return newNode;      // If the list is empty, return the new node as the head
+
+    Node* temp = head;              // Start at the head
+    while (temp->next) temp = temp->next;  // Traverse to the last node
+    temp->next = newNode;           // Link the last node to the new node
+    return head;                    // Return the unchanged head of the list
+}
+```
+### Traverse
+Traverses the entire linked list and prints the data of each node.
+```cpp
+void printList(Node* head) {
+    while (head) {               // While there are more nodes
+        cout << head->data << " "; // Print the data of the current node
+        head = head->next;         // Move to the next node
+    }
+    cout << "\n";                 // Print a newline after the list is printed
+}
+
+```
+## 3. Reverse a Linked List
+Reverses the order of nodes in the linked list, making the last node the head and the first node the tail.
+```cpp
+Node* reverseList(Node* head) {
+    Node* prev = nullptr;        // Previous node starts as nullptr (the new tail will point to nullptr)
+    Node* current = head;        // Start with the head of the list
+    Node* next = nullptr;        // Temporary pointer to store the next node during traversal
+
+    while (current) {            // Traverse through the list until reaching the end
+        next = current->next;    // Store the next node
+        current->next = prev;    // Reverse the current node's pointer to point to the previous node
+        prev = current;          // Move the prev pointer to the current node
+        current = next;          // Move to the next node in the original list
+    }
+
+    return prev;                 // At the end, prev will be the new head of the reversed list
+}
+```
+## 4. Find Middle Node (Fast & Slow Pointers)
+Finds the middle node of the linked list in a single pass by using two pointers: a fast pointer that moves two steps at a time and a slow pointer that moves one step at a time.
+```cpp
+Node* findMiddle(Node* head) {
+    if (!head) return nullptr;    // If the list is empty, return nullptr
+
+    Node* slow = head;            // Slow pointer starts at the head
+    Node* fast = head;            // Fast pointer also starts at the head
+
+    while (fast && fast->next) {  // Traverse the list while fast and fast->next are not null
+        slow = slow->next;        // Move slow pointer by one step
+        fast = fast->next->next;  // Move fast pointer by two steps
+    }
+
+    return slow;                  // When fast reaches the end, slow will be at the middle
+}
+```
+**Explanation**
+- **Slow pointer**: Moves one step at a time and will be at the middle when the fast pointer reaches the end of the list.
+- **Fast pointer**: Moves two steps at a time and helps determine when the end of the list is reached.
+- The loop continues as long as the fast pointer and the fast pointer’s next node are valid. Once the fast pointer reaches the end, the slow pointer will be at the middle of the list.
+- This method runs in **O(n)** time and uses **O(1)** extra space, making it an efficient way to find the middle node of a linked list.
+## 5. Detect Cycle (Floyd’s Algorithm)
+Detects if there is a cycle in a linked list using two pointers moving at different speeds (slow and fast). If there is a cycle, the slow and fast pointers will eventually meet.
+```cpp
+bool hasCycle(Node* head) {
+    if (!head || !head->next) return false;  // If the list is empty or has only one node, no cycle
+
+    Node* slow = head;          // Slow pointer starts at head
+    Node* fast = head;          // Fast pointer starts at head
+
+    while (fast && fast->next) {  // Traverse the list as long as fast can move two steps
+        slow = slow->next;        // Move slow pointer by one step
+        fast = fast->next->next;  // Move fast pointer by two steps
+
+        if (slow == fast) {       // If slow and fast pointers meet, there's a cycle
+            return true;
+        }
+    }
+
+    return false;  // If the loop ends without slow and fast meeting, there's no cycle
+}
+```
+**Explanation**
+- **Slow pointer**: Moves one step at a time.
+- **Fast pointer**: Moves two steps at a time.
+- If the two pointers meet at some point, there’s a cycle in the list. If the fast pointer reaches the end, there’s no cycle.
+- This algorithm runs in **O(n)** time and **O(1)** space.
+## 6. Merge Two Sorted Lists
+Merges two sorted linked lists into one sorted linked list.
+```cpp
+Node* mergeLists(Node* l1, Node* l2) {
+    Node* dummy = new Node(0);  // Create a dummy node to help with merging
+    Node* current = dummy;      // Pointer to the last node in the merged list
+
+    while (l1 && l2) {          // Traverse both lists while they are not empty
+        if (l1->data < l2->data) {   // If l1’s value is smaller, add l1 to the merged list
+            current->next = l1;
+            l1 = l1->next;
+        } else {                  // If l2’s value is smaller or equal, add l2 to the merged list
+            current->next = l2;
+            l2 = l2->next;
+        }
+        current = current->next; // Move the current pointer to the last node
+    }
+
+    // Append the remaining nodes of the non-empty list (if any)
+    if (l1) current->next = l1;
+    if (l2) current->next = l2;
+
+    return dummy->next;  // Return the merged list starting from the first actual node
+}
+```
+**Explanation**
+- **Dummy node**: A temporary node that simplifies the merging process by serving as the starting point.
+- The function compares nodes from both lists and appends the smaller node to the merged list, ensuring the result is sorted.
+- Runs in O(n + m) time, where n and m are the lengths of the two lists.
+## 7. Check Palindrome
+Checks if the linked list is a palindrome (reads the same forward and backward).
+```cpp
+bool isPalindrome(Node* head) {
+    if (!head || !head->next) return true;  // A list with 0 or 1 node is always a palindrome
+
+    // Step 1: Find the middle of the list using slow and fast pointers
+    Node* slow = head;
+    Node* fast = head;
+
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    // Step 2: Reverse the second half of the list
+    Node* prev = nullptr;
+    Node* curr = slow;
+    while (curr) {
+        Node* nextNode = curr->next;
+        curr->next = prev;
+        prev = curr;
+        curr = nextNode;
+    }
+
+    // Step 3: Compare the first and second halves
+    Node* firstHalf = head;
+    Node* secondHalf = prev;  // Second half starts at the reversed portion
+
+    while (secondHalf) {
+        if (firstHalf->data != secondHalf->data) {
+            return false;  // If any data doesn’t match, it's not a palindrome
+        }
+        firstHalf = firstHalf->next;
+        secondHalf = secondHalf->next;
+    }
+
+    return true;  // If all nodes matched, it's a palindrome
+}
+```
+**Explanation**
+- **Slow and fast pointers**: Used to find the middle of the list.
+- **Reverse the second half**: After finding the middle, reverse the second half of the list.
+- **Comparison**: Compare the first half and the reversed second half of the list.
+- Runs in **O(n)** time and uses **O(1)** space.
+## 8. Delete N-th Node from End
+Deletes the N-th node from the end of the linked list in a single pass.
+```cpp
+Node* deleteNthFromEnd(Node* head, int n) {
+    Node* dummy = new Node(0);  // Create a dummy node to handle edge cases (e.g., removing the head)
+    dummy->next = head;
+
+    Node* first = dummy;         // Start first pointer at dummy node
+    Node* second = dummy;        // Start second pointer at dummy node
+
+    // Move first pointer n+1 steps ahead
+    for (int i = 0; i <= n; i++) {
+        first = first->next;
+    }
+
+    // Move both first and second pointers until first reaches the end
+    while (first) {
+        first = first->next;
+        second = second->next;
+    }
+
+    // Now second is at the node just before the one to delete
+    Node* toDelete = second->next;
+    second->next = second->next->next;  // Skip the node to delete
+
+    delete toDelete;  // Free the memory of the deleted node
+
+    return dummy->next;  // Return the updated list
+}
+```
+**Explanation**
+- **Dummy node**: Simplifies edge cases, such as deleting the head node.
+- **Two pointers**: The first pointer is moved n+1 steps ahead, and then both pointers are moved together until the first pointer reaches the end. The second pointer will be just before the node to delete.
+- Runs in **O(n)** time and **O(1)** space.
+## 9. Extensions
+
+### Doubly Linked Lists
+- Nodes contain `prev` and `next` pointers.
+- Allows bi-directional traversal.
+- Easier to delete a node when you have a pointer to it.
+- Used in: LRU Cache, Undo/Redo functionality, Browsing History.
+
+```cpp
+struct Node {
+    int data;
+    Node* prev;
+    Node* next;
+};
+```
+
+### Linked List + Stack/Queue Hybrids
+Stack (LIFO) using Linked List:
+- Insert/delete at head
+- O(1) push and pop
+```cpp
+void push(int val) {
+    Node* node = new Node(val);
+    node->next = head;
+    head = node;
+}
+```
+Queue (FIFO) using Linked List:
+- Maintain head and tail pointers
+- Enqueue at tail, dequeue at head
+```cpp
+void enqueue(int val) {
+    Node* node = new Node(val);
+    if (tail) tail->next = node;
+    else head = node;
+    tail = node;
+}
+```
+### Circular Linked Lists
+A **Circular Linked List** is a variation of a linked list where the last node points back to the head. This makes traversing circular and avoids the need for a `nullptr` check at the end.
+#### Node Structure
+```cpp
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node* next;
+    Node(int val) : data(val), next(nullptr) {}
+};
+```
+Each node stores an integer data and a pointer to the next node. The constructor initializes data and sets next to nullptr.
+#### Insert Operation
+```cpp
+Node* insert(Node* head, int val) {
+    Node* newNode = new Node(val);
+    if (!head) {
+        newNode->next = newNode; // point to itself
+        return newNode;
+    }
+
+    Node* temp = head;
+    while (temp->next != head)
+        temp = temp->next;
+
+    temp->next = newNode;
+    newNode->next = head;
+    return head;
+}
+```
+**Explanation:**
+- If the list is empty, the new node points to itself and becomes the head.
+- Otherwise, traverse to the last node (which points to head) and link the new node at the end, maintaining circularity.
+#### Delete Operation
+```cpp
+Node* deleteNode(Node* head, int val) {
+    if (!head) return nullptr;
+
+    // Case: Only one node and it matches
+    if (head->next == head && head->data == val) {
+        delete head;
+        return nullptr;
+    }
+
+    Node* curr = head;
+    Node* prev = nullptr;
+
+    // Case: Deleting head node
+    if (head->data == val) {
+        // Find the last node
+        prev = head;
+        while (prev->next != head)
+            prev = prev->next;
+
+        prev->next = head->next;
+        Node* newHead = head->next;
+        delete head;
+        return newHead;
+    }
+
+    // Case: Deleting non-head node
+    prev = head;
+    curr = head->next;
+    while (curr != head) {
+        if (curr->data == val) {
+            prev->next = curr->next;
+            delete curr;
+            return head;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    // Node not found
+    return head;
+}
+```
+**Explanation:**
+- Handles deletion of the only node, the head node, or any non-head node.
+- If node not found, the list remains unchanged.
+#### Display Operation
+```cpp
+void display(Node* head) {
+    if (!head) {
+        cout << "List is empty\n";
+        return;
+    }
+
+    Node* temp = head;
+    do {
+        cout << temp->data << " ";
+        temp = temp->next;
+    } while (temp != head);
+
+    cout << endl;
+}
+```
+**Explanation:**
+- Prints all values in the circular list using a do-while loop to ensure it starts and ends at head.
+## 10. Practice Problems and Examples
+
+### Reverse a Doubly Linked List
+Reverses the direction of a doubly linked list by swapping `next` and `prev` pointers of each node.
+```cpp
+Node* reverseDLL(Node* head) {
+    Node* curr = head;
+    Node* temp = nullptr;
+
+    while (curr) {
+        temp = curr->prev;
+        curr->prev = curr->next;
+        curr->next = temp;
+        curr = curr->prev;
+    }
+
+    return temp ? temp->prev : nullptr;
+}
+```
+**Use Case:** Reversing history in a browser or editor.
+### Check if Circular Linked List
+Checks whether a linked list is circular by traversing the list and seeing if it loops back to the head.
+```cpp
+bool isCircular(Node* head) {
+    if (!head) return true;
+
+    Node* temp = head->next;
+    while (temp && temp != head)
+        temp = temp->next;
+
+    return temp == head;
+}
+```
+**Use Case:** Validate if list is circular (round-robin structures).
+### Implement LRU Cache (Doubly Linked List + HashMap)
+Combines a doubly linked list and a hashmap to implement an efficient Least Recently Used cache with O(1) access and update.
+```cpp
+class LRUCache {
+    int cap;
+    list<pair<int, int>> dll;
+    unordered_map<int, list<pair<int, int>>::iterator> mp;
+
+public:
+    LRUCache(int capacity) : cap(capacity) {}
+
+    int get(int key) {
+        if (mp.find(key) == mp.end()) return -1;
+        dll.splice(dll.begin(), dll, mp[key]);
+        return mp[key]->second;
+    }
+
+    void put(int key, int value) {
+        if (mp.find(key) != mp.end()) {
+            dll.splice(dll.begin(), dll, mp[key]);
+            mp[key]->second = value;
+            return;
+        }
+        if (dll.size() == cap) {
+            mp.erase(dll.back().first);
+            dll.pop_back();
+        }
+        dll.emplace_front(key, value);
+        mp[key] = dll.begin();
+    }
+};
+```
+**Use Case:** Memory/cache management where most recently used is retained.
+### Stack using Linked List (LIFO)
+Implements a stack using a singly linked list where elements are added and removed from the top.
+```cpp
+struct Stack {
+    Node* top = nullptr;
+
+    void push(int x) {
+        Node* temp = new Node(x);
+        temp->next = top;
+        top = temp;
+    }
+
+    int pop() {
+        if (!top) return -1;
+        int val = top->data;
+        Node* temp = top;
+        top = top->next;
+        delete temp;
+        return val;
+    }
+};
+```
+**Use Case:** Undo operation, recursion emulation.
+### Queue using Linked List (FIFO)
+Implements a queue using a linked list with pointers to the front and rear for enqueue and dequeue operations.
+```cpp
+struct Queue {
+    Node *front = nullptr, *rear = nullptr;
+
+    void enqueue(int x) {
+        Node* temp = new Node(x);
+        if (!rear) {
+            front = rear = temp;
+            return;
+        }
+        rear->next = temp;
+        rear = temp;
+    }
+
+    int dequeue() {
+        if (!front) return -1;
+        int val = front->data;
+        Node* temp = front;
+        front = front->next;
+        if (!front) rear = nullptr;
+        delete temp;
+        return val;
+    }
+};
+```
+**Use Case**: Job scheduling, order processing, or handling asynchronous data.<br />
+These variants help solve problems requiring constant-time insertion/deletion at both ends or cyclic behavior.
+
+## 11. Summary of Techniques
+
+| Technique                 | Use Case                                                            |
+|--------------------------|---------------------------------------------------------------------|
+| **Fast-Slow Pointers**    | Find middle of list, detect cycles (Floyd’s algorithm)             |
+| **Reverse Linked List**   | Needed for many transformation-based problems                      |
+| **Merge Lists**           | Useful in merge sort, combining sorted lists                       |
+| **Palindrome Check**      | Compare with reversed half                                         |
+| **Dummy Node**            | Simplifies insertions/deletions at head or tail                    |
+| **Doubly Linked List**    | Enables backward traversal, useful for LRU cache, reverse ops      |
+| **Circular Linked List**  | Useful for circular buffers, repeated traversal without null check |
+| **Linked List + Stack**   | Implement LIFO structure with push/pop                            |
+| **Linked List + Queue**   | Implement FIFO structure with enqueue/dequeue                     |
+| **HashMap + Linked List** | Efficient LRU Cache, ordered maps                                 |
+
+> This summary equips you with the techniques needed to master classic and advanced linked list problems!
+
