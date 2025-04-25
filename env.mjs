@@ -15,8 +15,6 @@ export const env = createEnv({
     DATABASE_URL: z.string().min(1),
     SMTP_FROM: z.string().min(1),
     POSTMARK_API_TOKEN: z.string().min(1),
-    MAILGUN_API_KEY: z.string().min(1),
-    MAILGUN_DOMAIN: z.string().min(1),
     POSTMARK_SIGN_IN_TEMPLATE: z.string().min(1),
     POSTMARK_ACTIVATION_TEMPLATE: z.string().min(1),
     STRIPE_API_KEY: z.string().min(1),
@@ -29,8 +27,6 @@ export const env = createEnv({
   runtimeEnv: {
     GMAIL_USER: process.env.GMAIL_USER,
     GMAIL_PASSWORD: process.env.GMAIL_PASSWORD,
-    MAILGUN_API_KEY: process.env.MAILGUN_API_KEY,
-    MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
