@@ -24,7 +24,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
-    error: "/login", // Error code passed in query string as ?error=
   },
   providers: [
     GitHubProvider({
@@ -32,22 +31,14 @@ export const authOptions: NextAuthOptions = {
       clientSecret: env.GITHUB_CLIENT_SECRET,
     }),
     EmailProvider({
-      from: "NabDev Auth <no-reply@yourapp.com>",  // The sender's email address
+      from: "Your App Name <no-reply@yourapp.com>",  // The sender's email address
       sendVerificationRequest: async ({ identifier, url, provider }) => {
         const message = {
-          from: provider.from,
+          from: provider.from as string,  // The 'from' email address set above
           to: identifier,
-          subject: `Sign in to ${siteConfig.name}`,
-          text: `Click here to sign in: ${url}`,
-          html: `
-            <body>
-              <h1>Welcome to ${siteConfig.name}</h1>
-              <p>Click the button below to sign in to your account.</p>
-              <a href="${url}" style="display:inline-block;background:#000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;">
-                Sign in
-              </a>
-            </body>
-          `,
+          subject: "Your sign-in link for our application",
+          text: `To complete your login, click the following link: ${url}`,
+          html: `<p>To complete your login, click the following link: <a href="${url}">Complete Login</a></p>`,
         };
 
         try {

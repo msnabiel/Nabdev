@@ -39,7 +39,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       redirect: false,
       callbackUrl: searchParams?.get("from") || "/dashboard",
     })
-
+    console.log("signInResult", signInResult)
+    // If the sign in was successful, redirect to the callback URL.
     setIsLoading(false)
 
     if (!signInResult?.ok) {
