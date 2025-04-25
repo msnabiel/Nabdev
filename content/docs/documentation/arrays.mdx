@@ -1,0 +1,198 @@
+---
+title: Arrays
+description: Master arrays in C++ with indexing, prefix sums, sliding windows, and advanced techniques like two pointers, binary search, hashing, and more.
+---
+
+Arrays are a fundamental data structure. Let’s go step-by-step through their features, uses, and famous techniques with explanations.
+
+## 1. Indexing and Basics
+
+Arrays in C++ are zero-indexed. That means the first element is at index `0`.
+
+```cpp
+int arr[5] = {10, 20, 30, 40, 50};
+cout << arr[0]; // 10
+cout << arr[4]; // 50
+```
+
+You can also declare and input arrays using loops:
+
+```cpp
+int n;
+cin >> n;
+int arr[n];
+for (int i = 0; i < n; i++) {
+    cin >> arr[i];
+}
+```
+
+---
+
+## 2. Prefix Sum
+Prefix sum is used to answer range sum queries in constant time.
+```cpp
+int prefix[n];
+prefix[0] = arr[0];
+for (int i = 1; i < n; i++) {
+    prefix[i] = prefix[i - 1] + arr[i];
+}
+
+// Sum from l to r
+int sum = prefix[r] - (l > 0 ? prefix[l - 1] : 0);
+```
+
+Problem
+- [Subarray Sum Queries](https://www.geeksforgeeks.org/prefix-sum-array-implementation-applications-competitive-programming/)
+
+---
+
+## 3. Sliding Window
+
+Used to handle subarrays of fixed or variable size efficiently.
+```cpp
+int maxSum = 0;
+int windowSum = 0;
+
+for (int i = 0; i < k; i++)
+    windowSum += arr[i];
+
+maxSum = windowSum;
+
+for (int i = k; i < n; i++) {
+    windowSum += arr[i] - arr[i - k];
+    maxSum = max(maxSum, windowSum);
+}
+```
+
+---
+
+## 4. Two Pointers
+
+Used when dealing with sorted arrays. Move pointers based on some condition to reduce time complexity.
+```cpp
+int l = 0, r = n - 1;
+while (l < r) {
+    int sum = arr[l] + arr[r];
+    if (sum == target) {
+        cout << "Found at " << l << " and " << r;
+        break;
+    } else if (sum < target)
+        l++;
+    else
+        r--;
+}
+```
+
+---
+
+## 5. Binary Search
+
+Efficiently find elements in sorted arrays. Divide the array in halves.
+
+```cpp
+int low = 0, high = n - 1;
+while (low <= high) {
+    int mid = (low + high) / 2;
+    if (arr[mid] == target)
+        return mid;
+    else if (arr[mid] < target)
+        low = mid + 1;
+    else
+        high = mid - 1;
+}
+return -1;
+```
+
+Use Case
+Search, lower_bound, upper_bound.
+
+---
+
+## 6. Hashing (unordered_map / unordered_set)
+Used for fast lookups, finding duplicates, frequency counting, etc.
+
+Example : Find if array has duplicates
+```cpp
+unordered_set<int> s;
+for (int i = 0; i < n; i++) {
+    if (s.find(arr[i]) != s.end())
+        return true;
+    s.insert(arr[i]);
+}
+return false;
+```
+
+---
+
+## 7. Frequency Array
+
+
+Used when array values are bounded (e.g. 0 to 1000000).
+
+```cpp
+int freq[100001] = {0};
+for (int i = 0; i < n; i++) {
+    freq[arr[i]]++;
+}
+```
+
+Use Cases
+- Count occurrences
+- Range frequencies
+
+---
+
+## 8. Famous Problems
+
+### 1. Kadane's Algorithm
+> Maximum subarray sum
+```cpp
+int max_so_far = arr[0], curr = arr[0];
+for (int i = 1; i < n; i++) {
+    curr = max(arr[i], curr + arr[i]);
+    max_so_far = max(max_so_far, curr);
+}
+```
+
+### 2. Subarray with Given Sum (Two Pointers)
+```cpp
+int sum = 0, l = 0;
+for (int r = 0; r < n; r++) {
+    sum += arr[r];
+    while (sum > target)
+        sum -= arr[l++];
+    if (sum == target)
+        return true;
+}
+```
+
+### 3. Count Subarrays with Sum K (HashMap)
+```cpp
+unordered_map<int, int> prefixCount;
+prefixCount[0] = 1;
+int currSum = 0, count = 0;
+
+for (int i = 0; i < n; i++) {
+    currSum += arr[i];
+    if (prefixCount.find(currSum - k) != prefixCount.end())
+        count += prefixCount[currSum - k];
+    prefixCount[currSum]++;
+}
+```
+
+---
+
+## 9. Summary of Techniques
+
+| Technique       | When to Use                                       |
+|----------------|----------------------------------------------------|
+| **Two Pointers** | For sorted arrays, pairs, or subarray conditions  |
+| **Binary Search** | For finding elements or positions in sorted arrays |
+| **Hashing**       | Fast lookups, duplicates, prefix frequencies     |
+| **Frequency Array** | When values are small integers                 |
+| **Prefix Sum**    | Constant time range sum queries                  |
+| **Sliding Window**| Efficiently manage subarrays of fixed/var size   |
+
+---
+
+You now have a complete arsenal to solve any array-related problem in C++!
