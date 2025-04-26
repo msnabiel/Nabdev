@@ -22,28 +22,29 @@ export const docsConfig: DocsConfig = {
       ],
     },
     {
-      title: "Documentation",
+      title: "Data Structures",
       items: [
         {
           title: "Introduction",
-          href: "/docs/documentation",
+          href: "/docs/data-structures",
+        },
+        {
+          title: "Arrays",
+          href: "/docs/data-structures/arrays",
+        },
+        {
+          title: "Linked Lists",
+          href: "/docs/data-structures/linked-lists",
         },
         {
           title: "Contentlayer",
           href: "/docs/in-progress",
           disabled: true,
         },
-        {
-          title: "Components",
-          href: "/docs/documentation/components",
-        },
-        {
-          title: "Code Blocks",
-          href: "/docs/documentation/code-blocks",
-        },
+
         {
           title: "Style Guide",
-          href: "/docs/documentation/style-guide",
+          href: "/docs/data-structures/style-guide",
         },
         {
           title: "Search",
@@ -53,7 +54,7 @@ export const docsConfig: DocsConfig = {
       ],
     },
     {
-      title: "Blog",
+      title: "Algorithms",
       items: [
         {
           title: "Introduction",
@@ -73,7 +74,7 @@ export const docsConfig: DocsConfig = {
       ],
     },
     {
-      title: "Dashboard",
+      title: "Patterns & Techniques",
       items: [
         {
           title: "Introduction",
@@ -108,7 +109,7 @@ export const docsConfig: DocsConfig = {
       ],
     },
     {
-      title: "Marketing Site",
+      title: "Graphs & Advanced Concepts",
       items: [
         {
           title: "Introduction",

@@ -8,7 +8,7 @@
   async function getGitHubStars(): Promise<string | null> {
     try {
       const response = await fetch(
-        "https://api.github.com/repos/shadcn/nabdev",
+        "https://api.github.com/repos/shadcn/taxonomy",
         {
           headers: {
             Accept: "application/vnd.github+json",
