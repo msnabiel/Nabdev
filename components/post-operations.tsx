@@ -53,19 +53,19 @@ export function PostOperations({ post }: PostOperationsProps) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted">
-          <Icons.ellipsis className="h-4 w-4" />
+        <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted md:h-10 md:w-10">
+          <Icons.ellipsis className="h-4 w-4 md:h-5 md:w-5" />
           <span className="sr-only">Open</span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-[200px] md:w-[220px]">
           <DropdownMenuItem>
-            <Link href={`/editor/${post.id}`} className="flex w-full">
+            <Link href={`/editor/${post.id}`} className="flex w-full py-2 md:py-2.5">
               Edit
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="flex cursor-pointer items-center text-destructive focus:text-destructive"
+            className="flex cursor-pointer items-center py-2 text-destructive focus:text-destructive md:py-2.5"
             onSelect={() => setShowDeleteAlert(true)}
           >
             Delete
@@ -73,17 +73,17 @@ export function PostOperations({ post }: PostOperationsProps) {
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent>
+        <AlertDialogContent className="mx-auto w-[95%] sm:max-w-[425px]">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-lg md:text-xl">
               Are you sure you want to delete this post?
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-sm md:text-base">
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
+            <AlertDialogCancel className="mt-2 sm:mt-0">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={async (event) => {
                 event.preventDefault()
@@ -97,7 +97,7 @@ export function PostOperations({ post }: PostOperationsProps) {
                   router.refresh()
                 }
               }}
-              className="bg-red-600 focus:ring-red-600"
+              className="w-full bg-red-600 focus:ring-red-600 sm:w-auto"
             >
               {isDeleteLoading ? (
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
