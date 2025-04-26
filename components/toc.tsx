@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { TableOfContents } from "@/lib/toc"
 import { cn } from "@/lib/utils"
 import { useMounted } from "@/hooks/use-mounted"
@@ -32,7 +32,9 @@ export function DashboardTableOfContents({ toc }: TocProps) {
   return mounted ? (
     <div className="space-y-2">
       <p className="font-medium">On This Page</p>
-      <Tree tree={toc} activeItem={activeHeading} />
+      <ScrollArea className="h-[calc(100vh-200px)] pr-4">
+        <Tree tree={toc} activeItem={activeHeading} />
+      </ScrollArea>
     </div>
   ) : null
 }

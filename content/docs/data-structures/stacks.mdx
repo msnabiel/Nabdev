@@ -1,0 +1,844 @@
+---
+title: Stacks
+description: Master stack data structures in C++ with implementations, operations, applications, and advanced techniques for solving classic problems like balanced parentheses, expression evaluation, next greater element, and more.
+---
+
+Stacks are linear data structures that follow the Last In First Out (LIFO) principle. Items are added and removed from the same end, making stacks suitable for problems involving nested or hierarchical processing. Let's explore implementations, algorithms, and common problems.
+
+## 1. Basics & Structure
+
+A stack contains elements with two primary operations: push (add) and pop (remove). Elements are always added and removed from one end called the "top".
+
+```cpp
+// Stack using array
+class ArrayStack {
+private:
+    int* arr;
+    int top;
+    int capacity;
+
+public:
+    ArrayStack(int size) {
+        arr = new int[size];
+        capacity = size;
+        top = -1;  // Stack is initially empty
+    }
+
+    ~ArrayStack() {
+        delete[] arr;
+    }
+
+    bool isEmpty() {
+        return top == -1;
+    }
+
+    bool isFull() {
+        return top == capacity - 1;
+    }
+
+    void push(int x) {
+        if (isFull()) {
+            cout << "Stack Overflow\n";
+            return;
+        }
+        arr[++top] = x;  // Increment top and add element
+    }
+
+    int pop() {
+        if (isEmpty()) {
+            cout << "Stack Underflow\n";
+            return -1;
+        }
+        return arr[top--];  // Return top element and decrement top
+    }
+
+    int peek() {
+        if (isEmpty()) {
+            cout << "Stack is Empty\n";
+            return -1;
+        }
+        return arr[top];  // Return top element without removing
+    }
+
+    int size() {
+        return top + 1;
+    }
+};
+```
+
+### Stack using Linked List
+
+```cpp
+struct Node {
+    int data;
+    Node* next;
+
+    Node(int val) {
+        data = val;
+        next = nullptr;
+    }
+};
+
+class LinkedListStack {
+private:
+    Node* top;
+    int stackSize;
+
+public:
+    LinkedListStack() {
+        top = nullptr;
+        stackSize = 0;
+    }
+
+    ~LinkedListStack() {
+        while (!isEmpty()) {
+            pop();
+        }
+    }
+
+    bool isEmpty() {
+        return top == nullptr;
+    }
+
+    void push(int x) {
+        Node* newNode = new Node(x);
+        newNode->next = top;
+        top = newNode;
+        stackSize++;
+    }
+
+    int pop() {
+        if (isEmpty()) {
+            cout << "Stack Underflow\n";
+            return -1;
+        }
+
+        Node* temp = top;
+        int popped = top->data;
+        top = top->next;
+        delete temp;
+        stackSize--;
+        return popped;
+    }
+
+    int peek() {
+        if (isEmpty()) {
+            cout << "Stack is Empty\n";
+            return -1;
+        }
+        return top->data;
+    }
+
+    int size() {
+        return stackSize;
+    }
+};
+```
+
+### Using STL Stack
+
+```cpp
+#include <stack>
+
+void stackSTL() {
+    stack<int> s;
+
+    // Push elements
+    s.push(10);
+    s.push(20);
+    s.push(30);
+
+    // Access top element
+    cout << "Top element: " << s.top() << endl;
+
+    // Remove top element
+    s.pop();
+
+    // Size of stack
+    cout << "Size: " << s.size() << endl;
+
+    // Check if empty
+    if (s.empty())
+        cout << "Stack is empty\n";
+    else
+        cout << "Stack is not empty\n";
+}
+```
+
+## 2. Common Stack Operations
+
+### Time Complexity
+| Operation | Time Complexity |
+|-----------|-----------------|
+| Push      | O(1)            |
+| Pop       | O(1)            |
+| Peek      | O(1)            |
+| isEmpty   | O(1)            |
+| size      | O(1)            |
+
+## 3. Applications of Stacks
+
+### Balanced Parentheses
+Checks if an expression has balanced parentheses.
+
+```cpp
+bool areParenthesesBalanced(string expr) {
+    stack<char> s;
+
+    for (char c : expr) {
+        if (c == '(' || c == '[' || c == '{') {
+            // Push opening bracket
+            s.push(c);
+        } else if (c == ')' || c == ']' || c == '}') {
+            // If stack is empty or matching opening bracket isn't found
+            if (s.empty())
+                return false;
+
+            char top = s.top();
+            if ((c == ')' && top == '(') ||
+                (c == ']' && top == '[') ||
+                (c == '}' && top == '{')) {
+                s.pop();
+            } else {
+                return false;  // Mismatched brackets
+            }
+        }
+    }
+
+    // Stack should be empty for balanced expression
+    return s.empty();
+}
+```
+
+### Infix to Postfix Conversion
+Converts an infix expression to postfix (Reverse Polish Notation).
+
+```cpp
+int precedence(char op) {
+    if (op == '+' || op == '-')
+        return 1;
+    if (op == '*' || op == '/')
+        return 2;
+    if (op == '^')
+        return 3;
+    return 0;
+}
+
+string infixToPostfix(string infix) {
+    stack<char> s;
+    string postfix = "";
+
+    for (char c : infix) {
+        // If character is operand, add to output
+        if (isalnum(c)) {
+            postfix += c;
+        }
+        // If character is '(', push to stack
+        else if (c == '(') {
+            s.push(c);
+        }
+        // If character is ')', pop and add to output until '(' is found
+        else if (c == ')') {
+            while (!s.empty() && s.top() != '(') {
+                postfix += s.top();
+                s.pop();
+            }
+            if (!s.empty() && s.top() == '(') {
+                s.pop();  // Remove '(' from stack
+            }
+        }
+        // If character is an operator
+        else {
+            while (!s.empty() && precedence(c) <= precedence(s.top())) {
+                postfix += s.top();
+                s.pop();
+            }
+            s.push(c);
+        }
+    }
+
+    // Pop remaining operators from stack
+    while (!s.empty()) {
+        if (s.top() == '(') {
+            return "Invalid Expression";  // Unbalanced parentheses
+        }
+        postfix += s.top();
+        s.pop();
+    }
+
+    return postfix;
+}
+```
+
+### Postfix Expression Evaluation
+Evaluates a postfix expression.
+
+```cpp
+int evaluatePostfix(string postfix) {
+    stack<int> s;
+
+    for (char c : postfix) {
+        // If character is operand, push to stack
+        if (isdigit(c)) {
+            s.push(c - '0');  // Convert char to int
+        }
+        // If character is operator, pop two elements, apply operator, push result
+        else {
+            int val2 = s.top(); s.pop();
+            int val1 = s.top(); s.pop();
+
+            switch (c) {
+                case '+': s.push(val1 + val2); break;
+                case '-': s.push(val1 - val2); break;
+                case '*': s.push(val1 * val2); break;
+                case '/': s.push(val1 / val2); break;
+                case '^': s.push(pow(val1, val2)); break;
+            }
+        }
+    }
+
+    return s.top();
+}
+```
+
+## 4. Advanced Stack Problems
+
+### Next Greater Element
+Finds the next greater element for every element in an array.
+
+```cpp
+vector<int> nextGreaterElements(vector<int>& nums) {
+    int n = nums.size();
+    vector<int> result(n, -1);  // Initialize with -1
+    stack<int> s;  // Stack to store indices
+
+    for (int i = 0; i < n; i++) {
+        // While stack is not empty and current element is greater than element at stack top
+        while (!s.empty() && nums[i] > nums[s.top()]) {
+            result[s.top()] = nums[i];  // Update result for the top index
+            s.pop();
+        }
+        s.push(i);  // Push current index
+    }
+
+    return result;
+}
+```
+
+### Largest Rectangle in Histogram
+Finds the area of the largest rectangle in a histogram.
+
+```cpp
+int largestRectangleArea(vector<int>& heights) {
+    int n = heights.size();
+    int maxArea = 0;
+    stack<int> s;  // Stack to store indices
+
+    for (int i = 0; i <= n; i++) {
+        int currHeight = (i == n) ? 0 : heights[i];
+
+        // If this bar is lower than the bar at top of stack,
+        // calculate area of rectangle with stack top as the lowest bar
+        while (!s.empty() && currHeight < heights[s.top()]) {
+            int top = s.top();
+            s.pop();
+
+            // Calculate area with heights[top] as smallest bar
+            int width = s.empty() ? i : i - s.top() - 1;
+            int area = heights[top] * width;
+            maxArea = max(maxArea, area);
+        }
+
+        // Push current index to stack
+        s.push(i);
+    }
+
+    return maxArea;
+}
+```
+
+### Stock Span Problem
+Calculates span of stock's price for all days.
+
+```cpp
+vector<int> calculateSpan(vector<int>& prices) {
+    int n = prices.size();
+    vector<int> spans(n, 1);  // Initialize with 1 (minimum span)
+    stack<int> s;  // Stack to store indices
+
+    for (int i = 0; i < n; i++) {
+        // Pop elements from stack while prices[i] is greater than or equal to prices at indices in stack
+        while (!s.empty() && prices[i] >= prices[s.top()]) {
+            s.pop();
+        }
+
+        // Calculate span
+        spans[i] = s.empty() ? i + 1 : i - s.top();
+
+        // Push current index to stack
+        s.push(i);
+    }
+
+    return spans;
+}
+```
+
+### Min Stack
+A stack that supports push, pop, top, and retrieving the minimum element in constant time.
+
+```cpp
+class MinStack {
+private:
+    stack<int> s;  // Main stack
+    stack<int> mins;  // Stack to track minimum values
+
+public:
+    MinStack() {
+        // Initialize stacks
+    }
+
+    void push(int val) {
+        s.push(val);
+
+        // Update min stack
+        if (mins.empty() || val <= mins.top()) {
+            mins.push(val);
+        }
+    }
+
+    void pop() {
+        if (s.empty()) return;
+
+        // If top of main stack is minimum, remove from min stack too
+        if (s.top() == mins.top()) {
+            mins.pop();
+        }
+
+        s.pop();
+    }
+
+    int top() {
+        if (s.empty()) return -1;
+        return s.top();
+    }
+
+    int getMin() {
+        if (mins.empty()) return -1;
+        return mins.top();
+    }
+};
+```
+
+## 5. Backtracking with Stacks
+
+### Generate All Valid Parentheses
+Generates all combinations of well-formed parentheses.
+
+```cpp
+vector<string> generateParenthesis(int n) {
+    vector<string> result;
+    generateParenthesisHelper(result, "", 0, 0, n);
+    return result;
+}
+
+void generateParenthesisHelper(vector<string>& result, string current, int open, int close, int max) {
+    // Base case: string is complete
+    if (current.length() == max * 2) {
+        result.push_back(current);
+        return;
+    }
+
+    // Add opening parenthesis if we still have some left
+    if (open < max) {
+        generateParenthesisHelper(result, current + "(", open + 1, close, max);
+    }
+
+    // Add closing parenthesis if it's valid
+    if (close < open) {
+        generateParenthesisHelper(result, current + ")", open, close + 1, max);
+    }
+}
+```
+
+## 6. Special Types of Stacks
+
+### Two Stacks in One Array
+Implements two stacks in one array efficiently.
+
+```cpp
+class TwoStacks {
+private:
+    int* arr;
+    int size;
+    int top1;  // Top for first stack
+    int top2;  // Top for second stack
+
+public:
+    TwoStacks(int n) {
+        size = n;
+        arr = new int[n];
+        top1 = -1;
+        top2 = size;
+    }
+
+    ~TwoStacks() {
+        delete[] arr;
+    }
+
+    // Operations for stack 1
+    void push1(int x) {
+        // Check for overflow
+        if (top1 < top2 - 1) {
+            arr[++top1] = x;
+        } else {
+            cout << "Stack Overflow\n";
+        }
+    }
+
+    int pop1() {
+        if (top1 >= 0) {
+            return arr[top1--];
+        } else {
+            cout << "Stack Underflow\n";
+            return -1;
+        }
+    }
+
+    // Operations for stack 2
+    void push2(int x) {
+        // Check for overflow
+        if (top1 < top2 - 1) {
+            arr[--top2] = x;
+        } else {
+            cout << "Stack Overflow\n";
+        }
+    }
+
+    int pop2() {
+        if (top2 < size) {
+            return arr[top2++];
+        } else {
+            cout << "Stack Underflow\n";
+            return -1;
+        }
+    }
+};
+```
+
+### Queue using Stacks
+Implements a queue using two stacks.
+
+```cpp
+class QueueUsingStacks {
+private:
+    stack<int> s1;  // For push operation
+    stack<int> s2;  // For pop operation
+
+public:
+    void enqueue(int x) {
+        // Push all elements to s1
+        s1.push(x);
+    }
+
+    int dequeue() {
+        // If both stacks are empty
+        if (s1.empty() && s2.empty()) {
+            cout << "Queue is Empty\n";
+            return -1;
+        }
+
+        // If s2 is empty, transfer elements from s1
+        if (s2.empty()) {
+            while (!s1.empty()) {
+                s2.push(s1.top());
+                s1.pop();
+            }
+        }
+
+        // Pop from s2
+        int x = s2.top();
+        s2.pop();
+        return x;
+    }
+
+    int front() {
+        // If both stacks are empty
+        if (s1.empty() && s2.empty()) {
+            cout << "Queue is Empty\n";
+            return -1;
+        }
+
+        // If s2 is empty, transfer elements from s1
+        if (s2.empty()) {
+            while (!s1.empty()) {
+                s2.push(s1.top());
+                s1.pop();
+            }
+        }
+
+        return s2.top();
+    }
+
+    bool isEmpty() {
+        return s1.empty() && s2.empty();
+    }
+};
+```
+
+## 7. Stack Design Patterns
+
+### Function Call Stack
+How recursive functions use system stack.
+
+```cpp
+// Example of factorial function using recursion (stack implicit)
+int factorial(int n) {
+    // Base case
+    if (n == 0 || n == 1)
+        return 1;
+
+    // Recursive call
+    return n * factorial(n - 1);
+}
+
+// Illustration of function call stack
+void explainCallStack() {
+    cout << "Calling factorial(4):\n";
+    cout << "1. Push factorial(4)\n";
+    cout << "2. Inside factorial(4), push factorial(3)\n";
+    cout << "3. Inside factorial(3), push factorial(2)\n";
+    cout << "4. Inside factorial(2), push factorial(1)\n";
+    cout << "5. factorial(1) returns 1\n";
+    cout << "6. Pop factorial(1)\n";
+    cout << "7. factorial(2) completes: 2 * 1 = 2\n";
+    cout << "8. Pop factorial(2)\n";
+    cout << "9. factorial(3) completes: 3 * 2 = 6\n";
+    cout << "10. Pop factorial(3)\n";
+    cout << "11. factorial(4) completes: 4 * 6 = 24\n";
+    cout << "12. Pop factorial(4)\n";
+    cout << "13. Result: 24\n";
+}
+```
+
+### Iterative DFS for Graph/Tree using Stack
+
+```cpp
+void iterativeDFS(TreeNode* root) {
+    if (!root) return;
+
+    stack<TreeNode*> s;  // Stack to simulate recursion
+    s.push(root);
+
+    while (!s.empty()) {
+        TreeNode* current = s.top();
+        s.pop();
+
+        cout << current->data << " ";  // Process node
+
+        // Push right child first (so left is processed first)
+        if (current->right)
+            s.push(current->right);
+
+        if (current->left)
+            s.push(current->left);
+    }
+}
+```
+
+## 8. Practice Problems and Examples
+
+### Remove All Adjacent Duplicates
+Removes all adjacent duplicates in a string.
+
+```cpp
+string removeDuplicates(string s) {
+    stack<char> st;
+
+    for (char c : s) {
+        if (!st.empty() && st.top() == c) {
+            st.pop();  // Remove duplicate
+        } else {
+            st.push(c);  // Add new character
+        }
+    }
+
+    // Construct result string (will be in reverse order)
+    string result = "";
+    while (!st.empty()) {
+        result = st.top() + result;
+        st.pop();
+    }
+
+    return result;
+}
+```
+**Use Case:** Text processing, string simplification.
+
+### Daily Temperatures
+For each day, find the number of days to wait for a warmer temperature.
+
+```cpp
+vector<int> dailyTemperatures(vector<int>& temperatures) {
+    int n = temperatures.size();
+    vector<int> answer(n, 0);
+    stack<int> s;  // Stack to store indices
+
+    for (int i = 0; i < n; i++) {
+        while (!s.empty() && temperatures[i] > temperatures[s.top()]) {
+            int prevDay = s.top();
+            s.pop();
+            answer[prevDay] = i - prevDay;
+        }
+        s.push(i);
+    }
+
+    return answer;
+}
+```
+**Use Case:** Weather prediction, time series analysis.
+
+### Evaluate Reverse Polish Notation
+Evaluates an expression in Reverse Polish Notation.
+
+```cpp
+int evalRPN(vector<string>& tokens) {
+    stack<int> s;
+
+    for (string token : tokens) {
+        if (token == "+" || token == "-" || token == "*" || token == "/") {
+            int val2 = s.top(); s.pop();
+            int val1 = s.top(); s.pop();
+
+            if (token == "+") s.push(val1 + val2);
+            else if (token == "-") s.push(val1 - val2);
+            else if (token == "*") s.push(val1 * val2);
+            else if (token == "/") s.push(val1 / val2);
+        } else {
+            // Convert string to integer
+            s.push(stoi(token));
+        }
+    }
+
+    return s.top();
+}
+```
+**Use Case:** Calculator applications, expression parsing.
+
+### Implement Browser History
+Simulates browser's forward and backward functionality.
+
+```cpp
+class BrowserHistory {
+private:
+    stack<string> backStack;
+    stack<string> forwardStack;
+    string currentPage;
+
+public:
+    BrowserHistory(string homepage) {
+        currentPage = homepage;
+        // Clear stacks
+        while(!backStack.empty()) backStack.pop();
+        while(!forwardStack.empty()) forwardStack.pop();
+    }
+
+    void visit(string url) {
+        // Push current page to back stack
+        backStack.push(currentPage);
+        // Update current page
+        currentPage = url;
+        // Clear forward stack
+        while(!forwardStack.empty()) forwardStack.pop();
+    }
+
+    string back(int steps) {
+        // Move back by steps if possible
+        while (steps > 0 && !backStack.empty()) {
+            forwardStack.push(currentPage);
+            currentPage = backStack.top();
+            backStack.pop();
+            steps--;
+        }
+        return currentPage;
+    }
+
+    string forward(int steps) {
+        // Move forward by steps if possible
+        while (steps > 0 && !forwardStack.empty()) {
+            backStack.push(currentPage);
+            currentPage = forwardStack.top();
+            forwardStack.pop();
+            steps--;
+        }
+        return currentPage;
+    }
+};
+```
+**Use Case:** Web browser implementation, navigation systems.
+
+## 9. Advanced Implementation: Thread-Safe Stack
+
+```cpp
+template <typename T>
+class ThreadSafeStack {
+private:
+    stack<T> data;
+    mutable mutex m;  // Mutex for thread safety
+
+public:
+    ThreadSafeStack() {}
+
+    // Copy constructor with lock
+    ThreadSafeStack(const ThreadSafeStack& other) {
+        lock_guard<mutex> lock(other.m);
+        data = other.data;
+    }
+
+    // Delete assignment operator
+    ThreadSafeStack& operator=(const ThreadSafeStack&) = delete;
+
+    void push(T value) {
+        lock_guard<mutex> lock(m);
+        data.push(move(value));
+    }
+
+    bool empty() const {
+        lock_guard<mutex> lock(m);
+        return data.empty();
+    }
+
+    optional<T> pop() {
+        lock_guard<mutex> lock(m);
+        if (data.empty()) {
+            return nullopt;  // Return empty optional if stack is empty
+        }
+
+        T res = move(data.top());
+        data.pop();
+        return res;
+    }
+
+    size_t size() const {
+        lock_guard<mutex> lock(m);
+        return data.size();
+    }
+};
+```
+**Use Case:** Concurrent programming, producer-consumer scenarios.
+
+## 10. Summary of Techniques
+
+| Technique                    | Use Case                                                     |
+|------------------------------|--------------------------------------------------------------|
+| **Balanced Parentheses**     | Syntax validation in compilers, expression checkers          |
+| **Infix to Postfix**         | Expression parsing, calculator applications                  |
+| **Next Greater Element**     | Stock price analysis, range queries                          |
+| **Min Stack**                | Range minimum query, sliding window problems                 |
+| **Two Stacks in Array**      | Memory-efficient implementation of multiple stacks           |
+| **Queue using Stacks**       | Understanding queue vs stack behaviors, system design        |
+| **Stack for Graph Traversal**| Depth-first search, maze solving, path finding               |
+| **Browser History**          | Navigation systems, undo/redo functionality                  |
+| **Thread-Safe Stack**        | Concurrent programming, multi-threaded applications          |
+| **Backtracking**             | Generate combinations, permutations, parentheses problems    |
+
+> This summary equips you with the techniques needed to master classic and advanced stack problems!

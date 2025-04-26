@@ -1,0 +1,1060 @@
+---
+title: Queues
+description: Master queue data structures in C++ with implementations, operations, applications, variations like priority queues and deques, and advanced techniques for solving problems like sliding window maximum, BFS traversal, and more.
+---
+
+Queues are linear data structures that follow the First In First Out (FIFO) principle. Items are added at the rear (enqueue) and removed from the front (dequeue), making queues ideal for problems involving sequential processing, buffering, and order preservation. Let's explore implementations, algorithms, and common problems.
+
+## 1. Basics & Structure
+
+```cpp
+// Queue using array with detailed comments
+class ArrayQueue {
+private:
+    int* arr;       // Array to store queue elements
+    int front;      // Index of the front element
+    int rear;       // Index where next element will be inserted
+    int capacity;   // Maximum number of elements the queue can hold
+    int size;       // Current number of elements in the queue
+
+public:
+    // Constructor initializes an empty queue with given capacity
+    ArrayQueue(int cap) {
+        capacity = cap;
+        arr = new int[capacity];  // Dynamic memory allocation for the array
+        front = 0;                // Initially front is at index 0
+        rear = 0;                 // Initially rear is at index 0
+        size = 0;                 // Queue starts empty
+    }
+
+    // Destructor to free allocated memory
+    ~ArrayQueue() {
+        delete[] arr;  // Free the dynamically allocated array
+    }
+
+    // Check if queue has no elements
+    bool isEmpty() {
+        return size == 0;  // Queue is empty when size is 0
+    }
+
+    // Check if queue is at maximum capacity
+    bool isFull() {
+        return size == capacity;  // Queue is full when size equals capacity
+    }
+
+    // Add element to the rear of queue
+    void enqueue(int x) {
+        if (isFull()) {
+            cout << "Queue Overflow\n";  // Cannot add to a full queue
+            return;
+        }
+        arr[rear] = x;                 // Place new element at rear position
+        rear = (rear + 1) % capacity;   // Circular increment - wrap around if needed
+        size++;                         // Increment size counter
+    }
+
+    // Remove element from the front of queue
+    int dequeue() {
+        if (isEmpty()) {
+            cout << "Queue Underflow\n";  // Cannot remove from empty queue
+            return -1;
+        }
+        int x = arr[front];              // Store the front element to return
+        front = (front + 1) % capacity;  // Circular increment - move front pointer
+        size--;                          // Decrement size counter
+        return x;                        // Return the removed element
+    }
+
+    // View the front element without removing it
+    int peek() {
+        if (isEmpty()) {
+            cout << "Queue is Empty\n";
+            return -1;
+        }
+        return arr[front];  // Return front element without modifying queue
+    }
+
+    // Get the current number of elements
+    int getSize() {
+        return size;
+    }
+};
+```
+### Queue using Linked List
+
+```cpp
+// Node structure for linked list implementation
+struct Node {
+    int data;      // Data stored in this node
+    Node* next;    // Pointer to the next node in the list
+
+    // Constructor initializes node with given value
+    Node(int val) {
+        data = val;
+        next = nullptr;  // New node initially points to nothing
+    }
+};
+
+// Queue implementation using a singly linked list
+class LinkedListQueue {
+private:
+    Node* front;    // Points to front node (for removal)
+    Node* rear;     // Points to rear node (for insertion)
+    int queueSize;  // Tracks number of elements in queue
+
+public:
+    // Constructor creates an empty queue
+    LinkedListQueue() {
+        front = nullptr;  // No front node in empty queue
+        rear = nullptr;   // No rear node in empty queue
+        queueSize = 0;    // Queue starts with zero elements
+    }
+
+    // Destructor cleans up all allocated nodes
+    ~LinkedListQueue() {
+        while (!isEmpty()) {
+            dequeue();  // Remove and delete each node until queue is empty
+        }
+    }
+
+    // Check if queue has no elements
+    bool isEmpty() {
+        return front == nullptr;  // Queue is empty when front is null
+    }
+
+    // Add an element to the rear of queue
+    void enqueue(int x) {
+        // Create a new node to hold the value
+        Node* newNode = new Node(x);
+
+        // Special case: If queue was empty
+        if (isEmpty()) {
+            front = rear = newNode;  // Both front and rear point to the new node
+        } else {
+            rear->next = newNode;    // Connect the current rear to new node
+            rear = newNode;          // Update rear to point to the new node
+        }
+        queueSize++;  // Increment size counter
+    }
+
+    // Remove and return the front element
+    int dequeue() {
+        if (isEmpty()) {
+            cout << "Queue Underflow\n";  // Cannot remove from empty queue
+            return -1;
+        }
+
+        // Save the front node and its data
+        Node* temp = front;
+        int removed = temp->data;
+
+        // Update front to point to the next node
+        front = front->next;
+
+        // If front becomes null, the queue is now empty
+        if (front == nullptr) {
+            rear = nullptr;  // Also update rear to null in this case
+        }
+
+        // Free memory of the removed node
+        delete temp;
+        queueSize--;  // Decrement size counter
+
+        return removed;  // Return the value that was removed
+    }
+
+    // View the front element without removing it
+    int peek() {
+        if (isEmpty()) {
+            cout << "Queue is Empty\n";
+            return -1;
+        }
+        return front->data;  // Return data of front node
+    }
+
+    // Get the current number of elements
+    int size() {
+        return queueSize;
+    }
+};
+```
+
+### Using STL Queue
+
+```cpp
+#include <queue>
+#include <iostream>
+using namespace std;
+
+void queueSTL() {
+    queue<int> q;  // Create a standard library queue of integers
+
+    // Add elements to the rear
+    q.push(10);  // Queue: [10]
+    q.push(20);  // Queue: [10, 20]
+    q.push(30);  // Queue: [10, 20, 30]
+
+    // Access the front element (oldest element)
+    cout << "Front element: " << q.front() << endl;  // Outputs: 10
+
+    // Access the rear element (newest element)
+    cout << "Rear element: " << q.back() << endl;    // Outputs: 30
+
+    // Remove the front element
+    q.pop();     // Queue: [20, 30]
+
+    // Check current size of queue
+    cout << "Size: " << q.size() << endl;  // Outputs: 2
+
+    // Check if queue is empty
+    if (q.empty())
+        cout << "Queue is empty\n";
+    else
+        cout << "Queue is not empty\n";  // This will be displayed
+}
+```
+
+### Double-ended Queue (Deque)
+A queue that allows insertion and deletion at both ends.
+
+```cpp
+class Deque {
+private:
+    int* arr;       // Array to store deque elements
+    int front;      // Index of the front element
+    int rear;       // Index of the rear element
+    int size;       // Current number of elements
+    int capacity;   // Maximum capacity of the deque
+
+public:
+    // Constructor initializes an empty deque
+    Deque(int cap) {
+        capacity = cap;
+        arr = new int[capacity];  // Allocate memory for the array
+        front = -1;  // Special value -1 indicates empty deque
+        rear = 0;    // Where next element will be inserted at rear
+        size = 0;    // Deque starts empty
+    }
+
+    // Destructor frees allocated memory
+    ~Deque() {
+        delete[] arr;
+    }
+
+    // Check if deque is at maximum capacity
+    bool isFull() {
+        return size == capacity;
+    }
+
+    // Check if deque has no elements
+    bool isEmpty() {
+        return size == 0;
+    }
+
+    // Add element at the front of deque
+    void insertFront(int x) {
+        if (isFull()) {
+            cout << "Deque Overflow\n";
+            return;
+        }
+
+        // If this is the first element
+        if (front == -1) {
+            front = rear = 0;  // Initialize indices
+        }
+        // If front is at the beginning, wrap around to the end
+        else if (front == 0) {
+            front = capacity - 1;
+        }
+        // Normal case: decrement front
+        else {
+            front--;
+        }
+
+        arr[front] = x;  // Store the new element
+        size++;          // Increment size counter
+    }
+
+    // Add element at the rear of deque
+    void insertRear(int x) {
+        if (isFull()) {
+            cout << "Deque Overflow\n";
+            return;
+        }
+
+        // If this is the first element
+        if (front == -1) {
+            front = rear = 0;  // Initialize indices
+        }
+        // If rear is at the end, wrap around to the beginning
+        else if (rear == capacity - 1) {
+            rear = 0;
+        }
+        // Normal case: increment rear
+        else {
+            rear++;
+        }
+
+        arr[rear] = x;  // Store the new element
+        size++;         // Increment size counter
+    }
+
+    // Remove and return the front element
+    int deleteFront() {
+        if (isEmpty()) {
+            cout << "Deque Underflow\n";
+            return -1;
+        }
+
+        int x = arr[front];  // Get the element to be removed
+
+        // If this is the last element
+        if (front == rear) {
+            front = rear = -1;  // Reset to empty deque
+        }
+        // If front is at the end, wrap around to beginning
+        else if (front == capacity - 1) {
+            front = 0;
+        }
+        // Normal case: increment front
+        else {
+            front++;
+        }
+
+        size--;  // Decrement size counter
+        return x;  // Return the removed element
+    }
+
+    // Remove and return the rear element
+    int deleteRear() {
+        if (isEmpty()) {
+            cout << "Deque Underflow\n";
+            return -1;
+        }
+
+        int x = arr[rear];  // Get the element to be removed
+
+        // If this is the last element
+        if (front == rear) {
+            front = rear = -1;  // Reset to empty deque
+        }
+        // If rear is at the beginning, wrap around to the end
+        else if (rear == 0) {
+            rear = capacity - 1;
+        }
+        // Normal case: decrement rear
+        else {
+            rear--;
+        }
+
+        size--;  // Decrement size counter
+        return x;  // Return the removed element
+    }
+
+    // Get the front element without removing it
+    int getFront() {
+        if (isEmpty()) {
+            cout << "Deque is Empty\n";
+            return -1;
+        }
+        return arr[front];  // Return front element
+    }
+
+    // Get the rear element without removing it
+    int getRear() {
+        if (isEmpty() || rear < 0) {
+            cout << "Deque is Empty\n";
+            return -1;
+        }
+        return arr[rear];  // Return rear element
+    }
+
+    // Get the current number of elements
+    int getSize() {
+        return size;
+    }
+};
+```
+
+### Priority Queue
+A queue where elements are dequeued based on priority.
+
+```cpp
+// Simple priority queue implementation using vector
+class PriorityQueue {
+private:
+    // Vector of (value, priority) pairs
+    vector<pair<int, int>> arr;
+
+public:
+    // Add element with given priority (higher number = higher priority)
+    void enqueue(int value, int priority) {
+        arr.push_back({value, priority});  // Store as pair
+    }
+
+    // Remove and return highest priority element
+    int dequeue() {
+        if (isEmpty()) {
+            cout << "Priority Queue is Empty\n";
+            return -1;
+        }
+
+        int highestPriority = INT_MIN;  // Start with minimum possible value
+        int index = -1;                 // Position of highest priority element
+
+        // Find element with highest priority
+        for (int i = 0; i < arr.size(); i++) {
+            if (arr[i].second > highestPriority) {
+                highestPriority = arr[i].second;  // Update highest priority
+                index = i;                        // Update index
+            }
+        }
+
+        int value = arr[index].first;          // Get the value to return
+        arr.erase(arr.begin() + index);        // Remove the element from vector
+        return value;                          // Return the highest priority element
+    }
+
+    // View highest priority element without removing
+    int peek() {
+        if (isEmpty()) {
+            cout << "Priority Queue is Empty\n";
+            return -1;
+        }
+
+        int highestPriority = INT_MIN;  // Start with minimum possible value
+        int index = -1;                 // Position of highest priority element
+
+        // Find element with highest priority
+        for (int i = 0; i < arr.size(); i++) {
+            if (arr[i].second > highestPriority) {
+                highestPriority = arr[i].second;  // Update highest priority
+                index = i;                        // Update index
+            }
+        }
+
+        return arr[index].first;  // Return value of highest priority element
+    }
+
+    // Check if priority queue is empty
+    bool isEmpty() {
+        return arr.empty();
+    }
+
+    // Get current number of elements
+    int size() {
+        return arr.size();
+    }
+};
+```
+
+### Using STL Priority Queue
+
+```cpp
+#include <queue>
+#include <iostream>
+using namespace std;
+
+void priorityQueueSTL() {
+    // Max heap priority queue (default - largest element has highest priority)
+    priority_queue<int> pq;
+
+    // Add elements
+    pq.push(10);  // Insert 10
+    pq.push(30);  // Insert 30
+    pq.push(20);  // Insert 20
+
+    // Access top element (highest priority - largest value)
+    cout << "Top element: " << pq.top() << endl;  // Outputs: 30
+
+    // Remove top element
+    pq.pop();  // Remove 30
+
+    // Create a min heap (smallest element has highest priority)
+    // using custom comparator
+    priority_queue<int, vector<int>, greater<int>> minPQ;
+
+    minPQ.push(10);  // Insert 10
+    minPQ.push(30);  // Insert 30
+    minPQ.push(20);  // Insert 20
+
+    // Access top element (highest priority - smallest value)
+    cout << "Min heap top: " << minPQ.top() << endl;  // Outputs: 10
+}
+```
+
+### Level Order Traversal of a Tree
+Traverses a tree level by level.
+
+```cpp
+struct TreeNode {
+    int data;
+    TreeNode* left;
+    TreeNode* right;
+
+    TreeNode(int val) {
+        data = val;
+        left = nullptr;
+        right = nullptr;
+    }
+};
+
+void levelOrderTraversal(TreeNode* root) {
+    if (!root) return;
+
+    queue<TreeNode*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        int levelSize = q.size();  // Number of nodes at current level
+
+        for (int i = 0; i < levelSize; i++) {
+            TreeNode* node = q.front();
+            q.pop();
+
+            cout << node->data << " ";  // Process current node
+
+            // Add children to queue for next level
+            if (node->left) q.push(node->left);
+            if (node->right) q.push(node->right);
+        }
+        cout << endl;  // New line after each level
+    }
+}
+```
+
+### Sliding Window Maximum
+Finds the maximum element in each sliding window of size k.
+
+```cpp
+vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+    vector<int> result;
+    deque<int> dq;  // Store indices of elements in current window
+
+    for (int i = 0; i < nums.size(); i++) {
+        // Remove elements outside current window
+        while (!dq.empty() && dq.front() < i - k + 1) {
+            dq.pop_front();
+        }
+
+        // Remove smaller elements (they won't be maximum)
+        while (!dq.empty() && nums[dq.back()] < nums[i]) {
+            dq.pop_back();
+        }
+
+        // Add current element
+        dq.push_back(i);
+
+        // Add to result if we've processed at least k elements
+        if (i >= k - 1) {
+            result.push_back(nums[dq.front()]);
+        }
+    }
+
+    return result;
+}
+```
+
+## 5. Advanced Queue Problems
+
+### LRU Cache
+Implements a Least Recently Used (LRU) cache.
+
+```cpp
+// Least Recently Used (LRU) Cache implementation
+class LRUCache {
+private:
+    int capacity;                                  // Maximum capacity of cache
+    list<pair<int, int>> cache;                    // List of (key, value) pairs in order of use
+    unordered_map<int, list<pair<int, int>>::iterator> map;  // Maps keys to list iterators
+
+public:
+    // Constructor initializes cache with given capacity
+    LRUCache(int cap) {
+        capacity = cap;
+    }
+
+    // Get value associated with key, or -1 if not found
+    int get(int key) {
+        // If key not in map
+        if (map.find(key) == map.end()) {
+            return -1;  // Key not found
+        }
+
+        // Key exists, move the accessed item to front (most recently used)
+        auto it = map[key];             // Get iterator to list node
+        pair<int, int> item = *it;      // Get the (key, value) pair
+        cache.erase(it);                // Remove from current position
+        cache.push_front(item);         // Add to front (most recently used)
+        map[key] = cache.begin();       // Update iterator in map
+
+        return item.second;  // Return the value
+    }
+
+    // Insert or update key-value pair
+    void put(int key, int value) {
+        // If key already exists, remove it first
+        if (map.find(key) != map.end()) {
+            cache.erase(map[key]);  // Remove from list
+            map.erase(key);         // Remove from map
+        }
+
+        // If cache is full, remove least recently used item (back of list)
+        if (cache.size() >= capacity) {
+            int lruKey = cache.back().first;  // Get key of LRU item
+            cache.pop_back();                 // Remove from list
+            map.erase(lruKey);                // Remove from map
+        }
+
+        // Add new item to front (most recently used)
+        cache.push_front({key, value});  // Add to front of list
+        map[key] = cache.begin();        // Store iterator in map
+    }
+};
+```
+
+### Implement Stack using Queues
+Demonstrates how to implement a stack using only queue operations.
+
+```cpp
+// Implement stack using queue operations
+class StackUsingQueues {
+private:
+    queue<int> q1;  // Main queue
+    queue<int> q2;  // Auxiliary queue
+
+public:
+    // Push element onto stack
+    void push(int x) {
+        // Add new element to empty q2
+        q2.push(x);
+
+        // Move all elements from q1 to q2
+        // This places the new element at the front when we swap
+        while (!q1.empty()) {
+            q2.push(q1.front());  // Move element from q1 to q2
+            q1.pop();             // Remove from q1
+        }
+
+        // Swap q1 and q2 - q1 now has all elements with newest at front
+        swap(q1, q2);  // q1 becomes our main queue with stack order
+    }
+
+    // Remove the top element from stack
+    int pop() {
+        if (q1.empty()) {
+            cout << "Stack Underflow\n";
+            return -1;
+        }
+
+        int top = q1.front();  // Get front element (top of stack)
+        q1.pop();              // Remove it
+        return top;            // Return the value
+    }
+
+    // Get the top element without removing
+    int top() {
+        if (q1.empty()) {
+            cout << "Stack is Empty\n";
+            return -1;
+        }
+
+        return q1.front();  // Return front element (top of stack)
+    }
+
+    // Check if stack is empty
+    bool empty() {
+        return q1.empty();
+    }
+
+    // Get current number of elements
+    int size() {
+        return q1.size();
+    }
+};
+```
+
+### Task Scheduler
+Schedules tasks with cooldown periods between same tasks.
+
+```cpp
+// Schedule tasks with cooldown periods between same tasks
+int leastInterval(vector<char>& tasks, int n) {
+    // Count frequency of each task
+    vector<int> frequencies(26, 0);  // For 26 letters A-Z
+    for (char task : tasks) {
+        frequencies[task - 'A']++;   // Increment count for this task
+    }
+
+    // Sort frequencies in non-decreasing order
+    sort(frequencies.begin(), frequencies.end());
+
+    // Find maximum frequency
+    int maxFreq = frequencies[25];  // Highest frequency at the end
+
+    // Calculate idle time - based on max frequency task
+    // (maxFreq-1) intervals each of length n
+    int idleTime = (maxFreq - 1) * n;
+
+    // Fill idle slots with other tasks
+    // Start from the second highest frequency
+    for (int i = 24; i >= 0 && idleTime > 0; i--) {
+        // Each task can be used at most (maxFreq-1) times
+        // (the last occurrence doesn't need idle time after it)
+        idleTime -= min(maxFreq - 1, frequencies[i]);
+    }
+
+    // Make sure idleTime is not negative
+    idleTime = max(0, idleTime);
+
+    // Total time = total tasks + remaining idle time
+    return tasks.size() + idleTime;
+}
+```
+
+## 6. Queue-based Algorithms
+
+### Shortest Path in Unweighted Graph
+Finds the shortest path from a source vertex to all other vertices.
+
+```cpp
+// Find shortest path from source to all vertices in unweighted graph
+vector<int> shortestPath(vector<vector<int>>& graph, int source) {
+    int n = graph.size();               // Number of vertices
+    vector<int> distance(n, INT_MAX);   // Initialize all distances to infinity
+    vector<bool> visited(n, false);     // Track visited vertices
+
+    queue<int> q;  // Queue for BFS
+
+    // Start BFS from source vertex
+    distance[source] = 0;    // Distance to source is 0
+    visited[source] = true;  // Mark source as visited
+    q.push(source);          // Add source to queue
+
+    while (!q.empty()) {
+        int u = q.front();  // Get current vertex
+        q.pop();            // Remove from queue
+
+        // Process all adjacent vertices
+        for (int v : graph[u]) {
+            if (!visited[v]) {
+                // Found a new vertex - update its distance and mark visited
+                visited[v] = true;
+                distance[v] = distance[u] + 1;  // Distance is one more than parent
+                q.push(v);                      // Add to queue for processing
+            }
+        }
+    }
+
+    return distance;  // Return array of shortest distances
+}
+```
+
+### Rotten Oranges
+Finds the minimum time required to rot all oranges.
+
+```cpp
+// Find minimum time until all oranges are rotten
+// 0: empty cell, 1: fresh orange, 2: rotten orange
+int orangesRotting(vector<vector<int>>& grid) {
+    int rows = grid.size();
+    int cols = grid[0].size();
+
+    queue<pair<int, int>> q;    // Queue to store positions of rotten oranges
+    int freshOranges = 0;       // Count of fresh oranges
+
+    // Find all rotten oranges and count fresh oranges
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            if (grid[i][j] == 2) {
+                q.push({i, j});  // Add position of rotten orange to queue
+            } else if (grid[i][j] == 1) {
+                freshOranges++;  // Count fresh orange
+            }
+        }
+    }
+
+    // If no fresh oranges, return 0 (no time needed)
+    if (freshOranges == 0) return 0;
+
+    // Four possible directions: up, right, down, left
+    vector<pair<int, int>> directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+
+    int minutes = 0;  // Time counter
+
+    // BFS to rot oranges level by level
+    while (!q.empty()) {
+        int size = q.size();           // Number of oranges at current minute
+        bool rotted = false;           // Flag to check if any orange rotted this minute
+
+        // Process all oranges at current time
+        for (int i = 0; i < size; i++) {
+            auto [r, c] = q.front();   // Get position of rotten orange
+            q.pop();                   // Remove from queue
+
+            // Check all four adjacent cells
+            for (auto [dr, dc] : directions) {
+                int nr = r + dr;       // New row
+                int nc = c + dc;       // New column
+
+                // If valid cell with fresh orange
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] == 1) {
+                    grid[nr][nc] = 2;  // Make it rotten
+                    q.push({nr, nc});  // Add to queue for next minute
+                    freshOranges--;    // Decrement fresh count
+                    rotted = true;     // Something rotted this minute
+                }
+            }
+        }
+
+        // Increment minutes only if something rotted
+        if (rotted) minutes++;
+    }
+
+    // If there are still fresh oranges left, it's impossible to rot all
+    return freshOranges > 0 ? -1 : minutes;
+}
+```
+
+## 7. Producer-Consumer Problem
+Illustrates using queues for thread synchronization.
+
+```cpp
+template <typename T>
+class ThreadSafeQueue {
+private:
+    queue<T> data;
+    mutable mutex m;
+    condition_variable cv;
+    int maxSize;
+
+public:
+    ThreadSafeQueue(int size) : maxSize(size) {}
+
+    void push(T item) {
+        unique_lock<mutex> lock(m);
+
+        // Wait until queue has space
+        cv.wait(lock, [this]() { return data.size() < maxSize; });
+
+        data.push(move(item));
+
+        // Notify one waiting thread
+        cv.notify_one();
+    }
+
+    T pop() {
+        unique_lock<mutex> lock(m);
+
+        // Wait until queue has items
+        cv.wait(lock, [this]() { return !data.empty(); });
+
+        T result = move(data.front());
+        data.pop();
+
+        // Notify one waiting thread
+        cv.notify_one();
+
+        return result;
+    }
+
+    bool empty() const {
+        lock_guard<mutex> lock(m);
+        return data.empty();
+    }
+
+    int size() const {
+        lock_guard<mutex> lock(m);
+        return data.size();
+    }
+};
+
+// Producer thread function
+void producer(ThreadSafeQueue<int>& queue, int items) {
+    for (int i = 0; i < items; i++) {
+        queue.push(i);
+        cout << "Produced: " << i << endl;
+        this_thread::sleep_for(chrono::milliseconds(100));  // Simulate work
+    }
+}
+
+// Consumer thread function
+void consumer(ThreadSafeQueue<int>& queue, int items) {
+    for (int i = 0; i < items; i++) {
+        int item = queue.pop();
+        cout << "Consumed: " << item << endl;
+        this_thread::sleep_for(chrono::milliseconds(150));  // Simulate work
+    }
+}
+
+void producerConsumerDemo() {
+    ThreadSafeQueue<int> queue(10);  // Queue with capacity 10
+
+    // Create producer and consumer threads
+    thread producerThread(producer, ref(queue), 20);
+    thread consumerThread(consumer, ref(queue), 20);
+
+    // Wait for threads to finish
+    producerThread.join();
+    consumerThread.join();
+}
+```
+
+## 8. Event-driven Programming
+Shows how queues are used in event processing systems.
+
+```cpp
+enum class EventType {
+    CLICK, HOVER, KEYPRESS, RESIZE
+};
+
+struct Event {
+    EventType type;
+    string data;
+
+    Event(EventType t, string d) : type(t), data(d) {}
+};
+
+class EventQueue {
+private:
+    queue<Event> events;
+    mutex m;
+
+public:
+    void addEvent(Event event) {
+        lock_guard<mutex> lock(m);
+        events.push(event);
+    }
+
+    bool processNextEvent() {
+        lock_guard<mutex> lock(m);
+
+        if (events.empty()) {
+            return false;
+        }
+
+        Event event = events.front();
+        events.pop();
+
+        // Process event based on type
+        switch (event.type) {
+            case EventType::CLICK:
+                cout << "Processing CLICK: " << event.data << endl;
+                break;
+            case EventType::HOVER:
+                cout << "Processing HOVER: " << event.data << endl;
+                break;
+            case EventType::KEYPRESS:
+                cout << "Processing KEYPRESS: " << event.data << endl;
+                break;
+            case EventType::RESIZE:
+                cout << "Processing RESIZE: " << event.data << endl;
+                break;
+        }
+
+        return true;
+    }
+
+    void processAllEvents() {
+        while (processNextEvent()) {
+            // Continue processing events
+        }
+    }
+};
+
+void eventDrivenDemo() {
+    EventQueue eventQueue;
+
+    // Add events to queue
+    eventQueue.addEvent(Event(EventType::CLICK, "Button1"));
+    eventQueue.addEvent(Event(EventType::HOVER, "Menu"));
+    eventQueue.addEvent(Event(EventType::KEYPRESS, "A"));
+    eventQueue.addEvent(Event(EventType::RESIZE, "800x600"));
+
+    // Process all events
+    eventQueue.processAllEvents();
+}
+```
+
+## 9. Job Scheduling
+Implements a simple job scheduler using a priority queue.
+
+```cpp
+struct Job {
+    int id;
+    int priority;
+    string description;
+
+    Job(int i, int p, string d) : id(i), priority(p), description(d) {}
+
+    // Comparison operator for priority_queue
+    bool operator<(const Job& other) const {
+        return priority < other.priority;  // For max heap based on priority
+    }
+};
+
+class JobScheduler {
+private:
+    priority_queue<Job> jobQueue;
+    mutex m;
+
+public:
+    void addJob(int id, int priority, string description) {
+        lock_guard<mutex> lock(m);
+        jobQueue.push(Job(id, priority, description));
+    }
+
+    bool executeNextJob() {
+        lock_guard<mutex> lock(m);
+
+        if (jobQueue.empty()) {
+            return false;
+        }
+
+        Job job = jobQueue.top();
+        jobQueue.pop();
+
+        cout << "Executing Job #" << job.id << " (Priority: " << job.priority << "): " << job.description << endl;
+
+        return true;
+    }
+
+    int pendingJobs() {
+        lock_guard<mutex> lock(m);
+        return jobQueue.size();
+    }
+};
+
+void jobSchedulerDemo() {
+    JobScheduler scheduler;
+
+    // Add jobs with different priorities
+    scheduler.addJob(1, 5, "Process data");
+    scheduler.addJob(2, 10, "Backup database");
+    scheduler.addJob(3, 3, "Generate report");
+    scheduler.addJob(4, 7, "Send notifications");
+
+    // Execute jobs (will execute in order of priority)
+    while (scheduler.executeNextJob()) {
+        // Continue executing jobs
+    }
+}
+```
+
+## 10. Summary of Techniques
+
+| Technique                    | Use Case                                                     |
+|------------------------------|--------------------------------------------------------------|
+| **Basic Queue**              | Sequential processing, maintaining order                     |
+| **Circular Queue**           | Efficient memory usage, bounded queues                       |
+| **Double-ended Queue**       | Front and rear operations, sliding window problems           |
+| **Priority Queue**           | Scheduling, event processing based on priority               |
+| **BFS**                      | Level-order traversal, shortest path in unweighted graphs    |
+| **LRU Cache**                | Caching strategies, resource management                      |
+| **Task Scheduler**           | CPU scheduling, resource allocation                          |
+| **Sliding Window**           | Stream processing, moving averages                           |
+| **Producer-Consumer**        | Thread synchronization, asynchronous processing              |
+| **Event-driven Programming** | GUI applications, message processing systems                 |
+| **Job Scheduling**           | Background tasks, priority-based execution                   |
+
+> This summary equips you with the techniques needed to master classic and advanced queue problems!

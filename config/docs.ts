@@ -37,6 +37,34 @@ export const docsConfig: DocsConfig = {
           href: "/docs/data-structures/linked-lists",
         },
         {
+          title: "Trees",
+          href: "/docs/data-structures/trees",
+        },
+        {
+          title: "Graphs",
+          href: "/docs/data-structures/graphs",
+        },
+        {
+          title: "Stacks",
+          href: "/docs/data-structures/stacks",
+        },
+        {
+          title: "Queues",
+          href: "/docs/data-structures/queues",
+        },
+        {
+          title: "Hash Tables",
+          href: "/docs/data-structures/hash-tables",
+        },
+        {
+          title: "Sets",
+          href: "/docs/data-structures/sets",
+        },
+        {
+          title: "Maps",
+          href: "/docs/data-structures/maps",
+        },
+        {
           title: "Contentlayer",
           href: "/docs/in-progress",
           disabled: true,
