@@ -1,0 +1,1098 @@
+---
+title: Graphs
+description: Master graph data structures in C++ with implementation, traversals, shortest paths, minimum spanning trees, and advanced problems like topological sort, strongly connected components, and more.
+---
+
+Graphs are versatile data structures representing connections between entities. They consist of vertices (nodes) and edges connecting them. Let's explore their implementations, algorithms, and common problems.
+
+## 1. Basics & Structure
+
+A graph consists of vertices and edges. There are several ways to represent graphs in code:
+
+### Adjacency Matrix
+```cpp
+class Graph {
+private:
+    int V; // Number of vertices
+    vector<vector<int>> adjMatrix;
+
+public:
+    Graph(int vertices) {
+        V = vertices;
+        // Initialize adjacency matrix with zeros
+        adjMatrix.resize(V, vector<int>(V, 0));
+    }
+
+    // Add edge between vertex u and v with weight w
+    void addEdge(int u, int v, int w = 1) {
+        adjMatrix[u][v] = w;
+        // For undirected graph, also set adjMatrix[v][u] = w
+    }
+};
+```
+
+### Adjacency List
+```cpp
+class Graph {
+private:
+    int V; // Number of vertices
+    vector<vector<pair<int, int>>> adjList; // Pair of (vertex, weight)
+
+public:
+    Graph(int vertices) {
+        V = vertices;
+        adjList.resize(V);
+    }
+
+    // Add edge between vertex u and v with weight w
+    void addEdge(int u, int v, int w = 1) {
+        adjList[u].push_back({v, w});
+        // For undirected graph, also add adjList[v].push_back({u, w})
+    }
+};
+```
+
+## 2. Graph Traversals
+
+### Depth-First Search (DFS)
+Explores as far as possible along each branch before backtracking.
+```cpp
+void dfs(vector<vector<int>>& adjList, int node, vector<bool>& visited) {
+    // Mark current node as visited
+    visited[node] = true;
+    cout << node << " ";
+
+    // Recur for all adjacent vertices
+    for (int neighbor : adjList[node]) {
+        if (!visited[neighbor]) {
+            dfs(adjList, neighbor, visited);
+        }
+    }
+}
+
+// Wrapper function to handle disconnected components
+void dfsTraversal(vector<vector<int>>& adjList, int V) {
+    vector<bool> visited(V, false);
+
+    for (int i = 0; i < V; i++) {
+        if (!visited[i]) {
+            dfs(adjList, i, visited);
+        }
+    }
+}
+```
+
+### Breadth-First Search (BFS)
+Explores all neighbors at the present depth before moving to nodes at the next depth level.
+```cpp
+void bfs(vector<vector<int>>& adjList, int start, vector<bool>& visited) {
+    // Create a queue for BFS
+    queue<int> q;
+
+    // Mark the current node as visited and enqueue it
+    visited[start] = true;
+    q.push(start);
+
+    while (!q.empty()) {
+        // Dequeue a vertex from queue and print it
+        int node = q.front();
+        cout << node << " ";
+        q.pop();
+
+        // Get all adjacent vertices of the dequeued vertex
+        // If an adjacent has not been visited, mark it visited and enqueue it
+        for (int neighbor : adjList[node]) {
+            if (!visited[neighbor]) {
+                visited[neighbor] = true;
+                q.push(neighbor);
+            }
+        }
+    }
+}
+
+// Wrapper function to handle disconnected components
+void bfsTraversal(vector<vector<int>>& adjList, int V) {
+    vector<bool> visited(V, false);
+
+    for (int i = 0; i < V; i++) {
+        if (!visited[i]) {
+            bfs(adjList, i, visited);
+        }
+    }
+}
+```
+
+## 3. Shortest Path Algorithms
+
+### Dijkstra's Algorithm
+Finds the shortest path from a source vertex to all other vertices in a weighted graph.
+```cpp
+vector<int> dijkstra(vector<vector<pair<int, int>>>& adjList, int V, int source) {
+    // Priority queue to store vertex-distance pairs
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+
+    // Vector to store distances
+    vector<int> distance(V, INT_MAX);
+
+    // Insert source with distance 0
+    pq.push({0, source});
+    distance[source] = 0;
+
+    while (!pq.empty()) {
+        // Extract minimum distance vertex
+        int u = pq.top().second;
+        pq.pop();
+
+        // Iterate through all adjacent vertices of u
+        for (auto& edge : adjList[u]) {
+            int v = edge.first;
+            int weight = edge.second;
+
+            // If there's a shorter path to v through u
+            if (distance[v] > distance[u] + weight) {
+                distance[v] = distance[u] + weight;
+                pq.push({distance[v], v});
+            }
+        }
+    }
+
+    return distance;
+}
+```
+
+### Bellman-Ford Algorithm
+Finds shortest paths from a source vertex to all other vertices, even with negative weight edges.
+```cpp
+vector<int> bellmanFord(vector<vector<pair<int, int>>>& adjList, int V, int source) {
+    // Vector to store distances
+    vector<int> distance(V, INT_MAX);
+    distance[source] = 0;
+
+    // Relax all edges V-1 times
+    for (int i = 0; i < V - 1; i++) {
+        for (int u = 0; u < V; u++) {
+            for (auto& edge : adjList[u]) {
+                int v = edge.first;
+                int weight = edge.second;
+
+                if (distance[u] != INT_MAX && distance[v] > distance[u] + weight) {
+                    distance[v] = distance[u] + weight;
+                }
+            }
+        }
+    }
+
+    // Check for negative weight cycles
+    for (int u = 0; u < V; u++) {
+        for (auto& edge : adjList[u]) {
+            int v = edge.first;
+            int weight = edge.second;
+
+            if (distance[u] != INT_MAX && distance[v] > distance[u] + weight) {
+                cout << "Graph contains negative weight cycle" << endl;
+                return {};
+            }
+        }
+    }
+
+    return distance;
+}
+```
+
+### Floyd-Warshall Algorithm
+Finds shortest paths between all pairs of vertices in a weighted graph.
+```cpp
+vector<vector<int>> floydWarshall(vector<vector<int>>& adjMatrix, int V) {
+    vector<vector<int>> dist = adjMatrix; // Copy the adjacency matrix
+
+    // Initialize the distance matrix with adjacency matrix values
+    for (int i = 0; i < V; i++) {
+        for (int j = 0; j < V; j++) {
+            if (i != j && dist[i][j] == 0) {
+                dist[i][j] = INT_MAX; // If no direct edge, set distance to infinity
+            }
+        }
+    }
+
+    // Update distances considering all vertices as intermediate
+    for (int k = 0; k < V; k++) {
+        for (int i = 0; i < V; i++) {
+            for (int j = 0; j < V; j++) {
+                // If k is on the shortest path from i to j
+                if (dist[i][k] != INT_MAX && dist[k][j] != INT_MAX &&
+                    dist[i][j] > dist[i][k] + dist[k][j]) {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                }
+            }
+        }
+    }
+
+    return dist;
+}
+```
+
+## 4. Minimum Spanning Tree Algorithms
+
+### Prim's Algorithm
+Finds a minimum spanning tree for a weighted undirected graph.
+```cpp
+vector<pair<int, int>> primMST(vector<vector<pair<int, int>>>& adjList, int V) {
+    // Priority queue to store vertex-weight pairs
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+
+    int src = 0; // Start from vertex 0
+
+    // Vector to store constructed MST
+    vector<pair<int, int>> mst; // Pair of (to, weight)
+
+    // Vector to keep track of vertices included in MST
+    vector<bool> inMST(V, false);
+
+    // Vector to store key values
+    vector<int> key(V, INT_MAX);
+
+    // Vector to store parent indices
+    vector<int> parent(V, -1);
+
+    // Insert source vertex with key 0
+    pq.push({0, src});
+    key[src] = 0;
+
+    while (!pq.empty() && mst.size() < V - 1) {
+        // Extract minimum key vertex
+        int u = pq.top().second;
+        pq.pop();
+
+        if (inMST[u]) continue;
+
+        inMST[u] = true;
+
+        // Add edge to MST if it's not the source vertex
+        if (parent[u] != -1) {
+            mst.push_back({u, key[u]});
+        }
+
+        // Update key values of adjacent vertices
+        for (auto& edge : adjList[u]) {
+            int v = edge.first;
+            int weight = edge.second;
+
+            if (!inMST[v] && key[v] > weight) {
+                parent[v] = u;
+                key[v] = weight;
+                pq.push({key[v], v});
+            }
+        }
+    }
+
+    return mst;
+}
+```
+
+### Kruskal's Algorithm
+Finds a minimum spanning tree by selecting edges in increasing order of weight.
+```cpp
+// Structure to represent an edge
+struct Edge {
+    int src, dest, weight;
+
+    // Constructor
+    Edge(int s, int d, int w) : src(s), dest(d), weight(w) {}
+
+    // Comparison operator for sorting
+    bool operator<(const Edge& other) const {
+        return weight < other.weight;
+    }
+};
+
+// Disjoint Set Union (DSU) operations
+class DisjointSet {
+private:
+    vector<int> parent, rank;
+
+public:
+    DisjointSet(int n) {
+        parent.resize(n);
+        rank.resize(n, 0);
+        for (int i = 0; i < n; i++) {
+            parent[i] = i; // Each element is its own parent initially
+        }
+    }
+
+    // Find the parent of a node with path compression
+    int find(int x) {
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]);
+        }
+        return parent[x];
+    }
+
+    // Union by rank
+    void unionSets(int x, int y) {
+        int rootX = find(x);
+        int rootY = find(y);
+
+        if (rootX == rootY) return;
+
+        if (rank[rootX] < rank[rootY]) {
+            parent[rootX] = rootY;
+        } else if (rank[rootX] > rank[rootY]) {
+            parent[rootY] = rootX;
+        } else {
+            parent[rootY] = rootX;
+            rank[rootX]++;
+        }
+    }
+};
+
+vector<Edge> kruskalMST(vector<Edge>& edges, int V) {
+    // Sort edges in non-decreasing order of weight
+    sort(edges.begin(), edges.end());
+
+    // Vector to store the resultant MST
+    vector<Edge> mst;
+
+    // Create disjoint sets
+    DisjointSet ds(V);
+
+    // Iterate through all sorted edges
+    for (auto& edge : edges) {
+        int rootSrc = ds.find(edge.src);
+        int rootDest = ds.find(edge.dest);
+
+        // If including this edge doesn't cause a cycle
+        if (rootSrc != rootDest) {
+            mst.push_back(edge);
+            ds.unionSets(rootSrc, rootDest);
+        }
+
+        // If we've added V-1 edges, we have our MST
+        if (mst.size() == V - 1) break;
+    }
+
+    return mst;
+}
+```
+
+## 5. Topological Sort
+
+Sorts vertices of a directed acyclic graph (DAG) in linear ordering such that for every directed edge u -> v, vertex u comes before v.
+
+### DFS-based Topological Sort
+```cpp
+void topologicalSortUtil(vector<vector<int>>& adjList, int node, vector<bool>& visited, stack<int>& s) {
+    // Mark the current node as visited
+    visited[node] = true;
+
+    // Recur for all adjacent vertices
+    for (int neighbor : adjList[node]) {
+        if (!visited[neighbor]) {
+            topologicalSortUtil(adjList, neighbor, visited, s);
+        }
+    }
+
+    // Push current vertex to stack after all its adjacent vertices are processed
+    s.push(node);
+}
+
+vector<int> topologicalSort(vector<vector<int>>& adjList, int V) {
+    stack<int> s;
+    vector<bool> visited(V, false);
+
+    // Call the recursive helper function for all vertices
+    for (int i = 0; i < V; i++) {
+        if (!visited[i]) {
+            topologicalSortUtil(adjList, i, visited, s);
+        }
+    }
+
+    // Pop all vertices from stack to get topological ordering
+    vector<int> result;
+    while (!s.empty()) {
+        result.push_back(s.top());
+        s.pop();
+    }
+
+    return result;
+}
+```
+
+### Kahn's Algorithm (BFS-based Topological Sort)
+```cpp
+vector<int> kahnTopologicalSort(vector<vector<int>>& adjList, int V) {
+    // Vector to store in-degree of each vertex
+    vector<int> inDegree(V, 0);
+
+    // Calculate in-degree for each vertex
+    for (int i = 0; i < V; i++) {
+        for (int neighbor : adjList[i]) {
+            inDegree[neighbor]++;
+        }
+    }
+
+    // Queue to store vertices with 0 in-degree
+    queue<int> q;
+    for (int i = 0; i < V; i++) {
+        if (inDegree[i] == 0) {
+            q.push(i);
+        }
+    }
+
+    // Vector to store topological ordering
+    vector<int> topOrder;
+    int count = 0; // Counter for processed vertices
+
+    while (!q.empty()) {
+        // Extract front of queue
+        int u = q.front();
+        q.pop();
+        topOrder.push_back(u);
+
+        // Decrement in-degree of all neighbors
+        for (int neighbor : adjList[u]) {
+            if (--inDegree[neighbor] == 0) {
+                q.push(neighbor);
+            }
+        }
+
+        count++;
+    }
+
+    // Check if there was a cycle
+    if (count != V) {
+        cout << "Graph contains a cycle!" << endl;
+        return {};
+    }
+
+    return topOrder;
+}
+```
+
+## 6. Strongly Connected Components
+
+### Kosaraju's Algorithm
+Finds all strongly connected components in a directed graph.
+```cpp
+void fillOrder(vector<vector<int>>& adjList, int node, vector<bool>& visited, stack<int>& s) {
+    // Mark the current node as visited
+    visited[node] = true;
+
+    // Recur for all adjacent vertices
+    for (int neighbor : adjList[node]) {
+        if (!visited[neighbor]) {
+            fillOrder(adjList, neighbor, visited, s);
+        }
+    }
+
+    // Push current vertex to stack
+    s.push(node);
+}
+
+void dfsUtil(vector<vector<int>>& adjList, int node, vector<bool>& visited, vector<int>& component) {
+    // Mark the current node as visited and print it
+    visited[node] = true;
+    component.push_back(node);
+
+    // Recur for all adjacent vertices
+    for (int neighbor : adjList[node]) {
+        if (!visited[neighbor]) {
+            dfsUtil(adjList, neighbor, visited, component);
+        }
+    }
+}
+
+vector<vector<int>> kosaraju(vector<vector<int>>& adjList, int V) {
+    stack<int> s;
+    vector<bool> visited(V, false);
+
+    // Fill vertices in stack according to their finishing times
+    for (int i = 0; i < V; i++) {
+        if (!visited[i]) {
+            fillOrder(adjList, i, visited, s);
+        }
+    }
+
+    // Create a reversed graph
+    vector<vector<int>> transposeGraph(V);
+    for (int u = 0; u < V; u++) {
+        for (int v : adjList[u]) {
+            transposeGraph[v].push_back(u);
+        }
+    }
+
+    // Reset visited array
+    fill(visited.begin(), visited.end(), false);
+
+    // Process all vertices in order defined by stack
+    vector<vector<int>> scc;
+    while (!s.empty()) {
+        int v = s.top();
+        s.pop();
+
+        if (!visited[v]) {
+            vector<int> component;
+            dfsUtil(transposeGraph, v, visited, component);
+            scc.push_back(component);
+        }
+    }
+
+    return scc;
+}
+```
+
+### Tarjan's Algorithm
+Another algorithm to find strongly connected components, usually more efficient than Kosaraju's.
+```cpp
+void tarjanUtil(vector<vector<int>>& adjList, int u, vector<int>& disc, vector<int>& low,
+                stack<int>& st, vector<bool>& stackMember, vector<vector<int>>& scc) {
+    static int time = 0;
+
+    // Initialize discovery time and low value
+    disc[u] = low[u] = ++time;
+    st.push(u);
+    stackMember[u] = true;
+
+    // Go through all vertices adjacent to this
+    for (int v : adjList[u]) {
+        // If v is not visited yet, then recur for it
+        if (disc[v] == -1) {
+            tarjanUtil(adjList, v, disc, low, st, stackMember, scc);
+
+            // Check if the subtree rooted with v has a connection to
+            // one of the ancestors of u
+            low[u] = min(low[u], low[v]);
+        }
+        // Update low value of u if v is already in stack (i.e., it's a back edge)
+        else if (stackMember[v]) {
+            low[u] = min(low[u], disc[v]);
+        }
+    }
+
+    // Head node found, pop the stack and create an SCC
+    int w = 0;  // To store stack extracted vertices
+    if (low[u] == disc[u]) {
+        vector<int> component;
+        while (st.top() != u) {
+            w = st.top();
+            component.push_back(w);
+            stackMember[w] = false;
+            st.pop();
+        }
+        w = st.top();
+        component.push_back(w);
+        stackMember[w] = false;
+        st.pop();
+
+        scc.push_back(component);
+    }
+}
+
+vector<vector<int>> tarjanSCC(vector<vector<int>>& adjList, int V) {
+    vector<int> disc(V, -1);
+    vector<int> low(V, -1);
+    vector<bool> stackMember(V, false);
+    stack<int> st;
+
+    vector<vector<int>> scc;
+
+    // Call the recursive helper function to find SCCs
+    for (int i = 0; i < V; i++) {
+        if (disc[i] == -1) {
+            tarjanUtil(adjList, i, disc, low, st, stackMember, scc);
+        }
+    }
+
+    return scc;
+}
+```
+
+## 7. Graph Coloring
+
+Assigns colors to vertices such that no two adjacent vertices have the same color.
+```cpp
+bool isSafe(vector<vector<int>>& adjList, vector<int>& colors, int v, int c) {
+    for (int neighbor : adjList[v]) {
+        if (colors[neighbor] == c) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool graphColoringUtil(vector<vector<int>>& adjList, vector<int>& colors, int m, int v, int V) {
+    // If all vertices are assigned a color
+    if (v == V) {
+        return true;
+    }
+
+    // Try different colors for vertex v
+    for (int c = 1; c <= m; c++) {
+        // Check if assignment of color c to v is safe
+        if (isSafe(adjList, colors, v, c)) {
+            colors[v] = c;
+
+            // Recur to assign colors to rest of the vertices
+            if (graphColoringUtil(adjList, colors, m, v + 1, V)) {
+                return true;
+            }
+
+            // If color assignment doesn't lead to a solution, backtrack
+            colors[v] = 0;
+        }
+    }
+
+    return false;
+}
+
+vector<int> graphColoring(vector<vector<int>>& adjList, int V, int m) {
+    vector<int> colors(V, 0); // 0 means no color assigned
+
+    if (!graphColoringUtil(adjList, colors, m, 0, V)) {
+        cout << "Solution does not exist" << endl;
+        return {};
+    }
+
+    return colors;
+}
+```
+
+## 8. Network Flow Algorithms
+
+### Ford-Fulkerson Algorithm with Edmonds-Karp Implementation
+Finds the maximum flow in a flow network.
+```cpp
+bool bfs(vector<vector<int>>& residualGraph, int s, int t, int V, vector<int>& parent) {
+    // Mark all vertices as not visited
+    vector<bool> visited(V, false);
+
+    // Create a queue for BFS
+    queue<int> q;
+    q.push(s);
+    visited[s] = true;
+    parent[s] = -1;
+
+    // BFS loop
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        // Check all adjacent vertices
+        for (int v = 0; v < V; v++) {
+            // If not visited and there is a path from u to v with positive residual capacity
+            if (!visited[v] && residualGraph[u][v] > 0) {
+                // Mark v as visited and store its parent
+                q.push(v);
+                parent[v] = u;
+                visited[v] = true;
+            }
+        }
+    }
+
+    // If we reached sink in BFS, then return true, else false
+    return visited[t];
+}
+
+int fordFulkerson(vector<vector<int>>& graph, int s, int t, int V) {
+    // Create a residual graph identical to the original graph
+    vector<vector<int>> residualGraph = graph;
+
+    // Vector to store path
+    vector<int> parent(V);
+
+    int maxFlow = 0; // Initialize result
+
+    // Augment the flow while there is a path from source to sink
+    while (bfs(residualGraph, s, t, V, parent)) {
+        // Find minimum residual capacity of the edges along the path
+        int pathFlow = INT_MAX;
+        for (int v = t; v != s; v = parent[v]) {
+            int u = parent[v];
+            pathFlow = min(pathFlow, residualGraph[u][v]);
+        }
+
+        // Update residual capacities of the edges and reverse edges along the path
+        for (int v = t; v != s; v = parent[v]) {
+            int u = parent[v];
+            residualGraph[u][v] -= pathFlow;
+            residualGraph[v][u] += pathFlow;
+        }
+
+        // Add path flow to overall flow
+        maxFlow += pathFlow;
+    }
+
+    return maxFlow;
+}
+```
+
+## 9. Advanced Graph Problems
+
+### Articulation Points (Cut Vertices)
+Vertices that, when removed, increase the number of connected components in the graph.
+```cpp
+void articulationPointsUtil(vector<vector<int>>& adjList, int u, int& time,
+                           vector<int>& disc, vector<int>& low, vector<int>& parent,
+                           vector<bool>& isArticulationPoint) {
+    // Count of children in DFS Tree
+    int children = 0;
+
+    // Mark the current node as visited
+    disc[u] = low[u] = ++time;
+
+    // Go through all adjacent vertices
+    for (int v : adjList[u]) {
+        // If v is not visited yet, then make it a child of u in DFS tree and recur for it
+        if (disc[v] == -1) {
+            children++;
+            parent[v] = u;
+            articulationPointsUtil(adjList, v, time, disc, low, parent, isArticulationPoint);
+
+            // Check if the subtree rooted with v has a connection to one of the ancestors of u
+            low[u] = min(low[u], low[v]);
+
+            // If u is not root and low value of one of its children is more than or equal to disc value of u
+            if (parent[u] != -1 && low[v] >= disc[u]) {
+                isArticulationPoint[u] = true;
+            }
+
+            // If u is root of DFS tree and has more than one child
+            if (parent[u] == -1 && children > 1) {
+                isArticulationPoint[u] = true;
+            }
+        }
+        // Update low value of u for parent function calls
+        else if (v != parent[u]) {
+            low[u] = min(low[u], disc[v]);
+        }
+    }
+}
+
+vector<int> findArticulationPoints(vector<vector<int>>& adjList, int V) {
+    vector<int> disc(V, -1);
+    vector<int> low(V, -1);
+    vector<int> parent(V, -1);
+    vector<bool> isArticulationPoint(V, false);
+
+    int time = 0;
+
+    // Call the recursive helper function for DFS traversal
+    for (int i = 0; i < V; i++) {
+        if (disc[i] == -1) {
+            articulationPointsUtil(adjList, i, time, disc, low, parent, isArticulationPoint);
+        }
+    }
+
+    // Collect articulation points
+    vector<int> articulationPoints;
+    for (int i = 0; i < V; i++) {
+        if (isArticulationPoint[i]) {
+            articulationPoints.push_back(i);
+        }
+    }
+
+    return articulationPoints;
+}
+```
+
+### Bridges
+Edges that, when removed, increase the number of connected components in the graph.
+```cpp
+void bridgesUtil(vector<vector<int>>& adjList, int u, int& time, vector<int>& disc,
+                vector<int>& low, vector<int>& parent, vector<pair<int, int>>& bridges) {
+    // Mark the current node as visited
+    disc[u] = low[u] = ++time;
+
+    // Go through all adjacent vertices
+    for (int v : adjList[u]) {
+        // If v is not visited yet, recur for it
+        if (disc[v] == -1) {
+            parent[v] = u;
+            bridgesUtil(adjList, v, time, disc, low, parent, bridges);
+
+            // Check if the subtree rooted with v has a connection to one of the ancestors of u
+            low[u] = min(low[u], low[v]);
+
+            // If the lowest vertex reachable from subtree under v is below u, then u-v is a bridge
+            if (low[v] > disc[u]) {
+                bridges.push_back({u, v});
+            }
+        }
+        // Update low value of u for parent function calls
+        else if (v != parent[u]) {
+            low[u] = min(low[u], disc[v]);
+        }
+    }
+}
+
+vector<pair<int, int>> findBridges(vector<vector<int>>& adjList, int V) {
+    vector<int> disc(V, -1);
+    vector<int> low(V, -1);
+    vector<int> parent(V, -1);
+    vector<pair<int, int>> bridges;
+
+    int time = 0;
+
+    // Call the recursive helper function for DFS traversal
+    for (int i = 0; i < V; i++) {
+        if (disc[i] == -1) {
+            bridgesUtil(adjList, i, time, disc, low, parent, bridges);
+        }
+    }
+
+    return bridges;
+}
+```
+
+### Bipartite Graph Check
+Checks if a graph can be divided into two sets such that no edges exist within the same set.
+```cpp
+bool isBipartite(vector<vector<int>>& adjList, int V) {
+    // Vector to store color of each vertex (0: uncolored, 1: color 1, -1: color 2)
+    vector<int> color(V, 0);
+
+    // Perform BFS for each uncolored vertex
+    for (int start = 0; start < V; start++) {
+        if (color[start] != 0) continue;
+
+        queue<int> q;
+        q.push(start);
+        color[start] = 1; // Color first vertex
+
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+
+            // Check all adjacent vertices
+            for (int v : adjList[u]) {
+                // If uncolored, color it opposite to u
+                if (color[v] == 0) {
+                    color[v] = -color[u];
+                    q.push(v);
+                }
+                // If already colored and has same color as u, graph is not bipartite
+                else if (color[v] == color[u]) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+```
+
+## 10. Practice Problems and Examples
+
+### Clone a Graph
+Creates a deep copy of a graph.
+```cpp
+// Graph node structure
+struct Node {
+    int val;
+    vector<Node*> neighbors;
+
+    Node(int _val = 0) {
+        val = _val;
+        neighbors = vector<Node*>();
+    }
+};
+
+Node* cloneGraph(Node* node) {
+    if (!node) return nullptr;
+
+    // Map to store mapping of original node to its clone
+    unordered_map<Node*, Node*> clones;
+
+    // Create a queue for BFS traversal
+    queue<Node*> q;
+    q.push(node);
+
+    // Create clone for the first node
+    clones[node] = new Node(node->val);
+
+    // BFS traversal
+    while (!q.empty()) {
+        Node* curr = q.front();
+        q.pop();
+
+        // Process all neighbors of current node
+        for (Node* neighbor : curr->neighbors) {
+            // If neighbor not yet cloned, create clone and add to queue
+            if (clones.find(if (clones.find(neighbor) == clones.end()) {
+                clones[neighbor] = new Node(neighbor->val);
+                q.push(neighbor);
+            }
+
+            // Add neighbor's clone to current node's clone's neighbors
+            clones[curr]->neighbors.push_back(clones[neighbor]);
+        }
+    }
+
+    return clones[node];
+}
+```
+
+### Detect Cycle in Undirected Graph
+Determines if an undirected graph contains a cycle.
+```cpp
+bool hasCycleUndirected(vector<vector<int>>& adjList, int V) {
+    // Mark all vertices as not visited
+    vector<bool> visited(V, false);
+
+    // Call the recursive helper function to detect cycle in different DFS trees
+    for (int i = 0; i < V; i++) {
+        if (!visited[i]) {
+            if (hasCycleUtil(adjList, i, visited, -1)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool hasCycleUtil(vector<vector<int>>& adjList, int u, vector<bool>& visited, int parent) {
+    // Mark the current node as visited
+    visited[u] = true;
+
+    // Recur for all adjacent vertices
+    for (int v : adjList[u]) {
+        // If an adjacent is not visited, then recur for that adjacent
+        if (!visited[v]) {
+            if (hasCycleUtil(adjList, v, visited, u)) {
+                return true;
+            }
+        }
+        // If an adjacent is visited and not parent of current vertex, then there is a cycle
+        else if (v != parent) {
+            return true;
+        }
+    }
+
+    return false;
+}
+```
+
+### Detect Cycle in Directed Graph
+Determines if a directed graph contains a cycle.
+```cpp
+bool hasCycleDirected(vector<vector<int>>& adjList, int V) {
+    vector<bool> visited(V, false);
+    vector<bool> recStack(V, false);
+
+    // Call the recursive helper function to detect cycle in different DFS trees
+    for (int i = 0; i < V; i++) {
+        if (hasCycleDirectedUtil(adjList, i, visited, recStack)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool hasCycleDirectedUtil(vector<vector<int>>& adjList, int u, vector<bool>& visited, vector<bool>& recStack) {
+    if (!visited[u]) {
+        // Mark the current node as visited and part of recursion stack
+        visited[u] = true;
+        recStack[u] = true;
+
+        // Recur for all adjacent vertices
+        for (int v : adjList[u]) {
+            // If an adjacent is not visited, then recur for that adjacent
+            if (!visited[v] && hasCycleDirectedUtil(adjList, v, visited, recStack)) {
+                return true;
+            }
+            // If an adjacent is visited and in recursion stack, then there is a cycle
+            else if (recStack[v]) {
+                return true;
+            }
+        }
+    }
+
+    // Remove the vertex from recursion stack
+    recStack[u] = false;
+    return false;
+}
+```
+
+### Shortest Path in Unweighted Graph
+Finds shortest path from a source vertex to all other vertices in an unweighted graph.
+```cpp
+vector<int> shortestPath(vector<vector<int>>& adjList, int V, int src) {
+    // Vector to store distances
+    vector<int> dist(V, INT_MAX);
+
+    // Queue for BFS
+    queue<int> q;
+
+    // Distance of source vertex from itself is 0
+    dist[src] = 0;
+    q.push(src);
+
+    while (!q.empty()) {
+        // Get the front vertex from queue
+        int u = q.front();
+        q.pop();
+
+        // Process all adjacent vertices of u
+        for (int v : adjList[u]) {
+            // If this adjacent vertex is not yet processed
+            if (dist[v] == INT_MAX) {
+                dist[v] = dist[u] + 1;
+                q.push(v);
+            }
+        }
+    }
+
+    return dist;
+}
+```
+
+## 11. Graph Algorithms Summary Table
+
+| Algorithm | Purpose | Time Complexity | Space Complexity | Key Features |
+|-----------|---------|----------------|------------------|--------------|
+| **Traversal Algorithms** |  |  |  |  |
+| DFS | Graph exploration | O(V + E) | O(V) | Explores deep paths first, uses recursion or stack |
+| BFS | Level-order search | O(V + E) | O(V) | Explores nearby vertices first, uses queue |
+| **Shortest Path Algorithms** |  |  |  |  |
+| Dijkstra's | Single-source shortest path (positive weights) | O(E + V log V) | O(V) | Greedy approach, uses priority queue |
+| Bellman-Ford | Single-source shortest path (any weights) | O(V * E) | O(V) | Handles negative weights, detects negative cycles |
+| Floyd-Warshall | All-pairs shortest path | O(V³) | O(V²) | Dynamic programming approach |
+| **Minimum Spanning Tree** |  |  |  |  |
+| Prim's | Minimum spanning tree | O(E log V) | O(V) | Grows tree from single source using greedy approach |
+| Kruskal's | Minimum spanning tree | O(E log E) | O(V) | Sorts edges by weight, uses Union-Find data structure |
+| **Connectivity Algorithms** |  |  |  |  |
+| Topological Sort | Linear ordering of vertices in DAG | O(V + E) | O(V) | Useful for dependency resolution, scheduling |
+| Kosaraju's | Strongly connected components | O(V + E) | O(V) | Uses two DFS passes and graph transposition |
+| Tarjan's | Strongly connected components | O(V + E) | O(V) | Single DFS pass, more efficient than Kosaraju's |
+| **Special Graph Problems** |  |  |  |  |
+| Articulation Points | Find cut vertices | O(V + E) | O(V) | Identifies critical nodes in network |
+| Bridges | Find cut edges | O(V + E) | O(V) | Identifies critical connections |
+| Ford-Fulkerson | Maximum flow | O(max_flow * E) | O(V²) | Network flow algorithm |
+| Bipartite Check | Test if graph can be colored with 2 colors | O(V + E) | O(V) | Useful for matching problems |
+| Graph Coloring | Assign colors to vertices | O(m^V) | O(V) | NP-complete for general case |
+| Cycle Detection | Find cycles in graph | O(V + E) | O(V) | Different algorithms for directed/undirected graphs |
+
+## 12. Real-world Applications of Graph Algorithms
+
+Graphs have numerous real-world applications:
+
+1. **Social Networks**: Representing connections between people
+2. **Web Pages**: PageRank algorithm for ranking web pages
+3. **GPS Navigation**: Finding shortest paths between locations
+4. **Network Routing**: Efficient data packet routing
+5. **Recommendation Systems**: Suggesting products or friends
+6. **Compiler Design**: Function call graphs and dependency resolution
+7. **Bioinformatics**: Protein-protein interaction networks
+8. **Circuit Design**: Electronic circuit analysis
+
+## 13. Conclusion
+
+Graphs are powerful and versatile data structures with numerous applications. Understanding graph algorithms is essential for solving complex problems efficiently in various domains like social networks, transportation, web search, and more.
+
+Practice implementing these algorithms and solving graph problems to strengthen your understanding and problem-solving skills. Resources like LeetCode, HackerRank, and competitive programming platforms offer numerous graph problems to solve.
+
+Remember that the choice of graph representation (adjacency matrix vs. adjacency list) depends on the specific problem requirements, graph density, and operations to be performed.
+
+Happy coding and graph algorithm mastery!

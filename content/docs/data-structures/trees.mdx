@@ -1,0 +1,626 @@
+---
+title: Trees
+description: Master tree data structures in C++ with implementation, traversals, binary search trees, AVL trees, tries, and advanced problems like level order traversal, lowest common ancestor, and more.
+---
+
+Trees are hierarchical data structures with a root value and subtrees of children, represented as a set of linked nodes. Let's explore their implementations, algorithms, and common problems.
+
+## 1. Basics & Structure
+
+A tree node contains data and pointers to its children. The most common tree is a binary tree, where each node has at most two children.
+
+```cpp
+struct TreeNode {
+    int data;
+    TreeNode* left;
+    TreeNode* right;
+
+    TreeNode(int val) {
+        data = val;
+        left = nullptr;
+        right = nullptr;
+    }
+};
+```
+
+## 2. Tree Traversals
+
+### In-order Traversal
+Visits left subtree, then root, then right subtree (produces sorted values for a BST).
+```cpp
+void inOrderTraversal(TreeNode* root) {
+    if (!root) return;           // Base case: empty tree
+
+    inOrderTraversal(root->left);  // Visit left subtree
+    cout << root->data << " ";     // Visit root
+    inOrderTraversal(root->right); // Visit right subtree
+}
+```
+
+### Pre-order Traversal
+Visits root, then left subtree, then right subtree (useful for copying trees).
+```cpp
+void preOrderTraversal(TreeNode* root) {
+    if (!root) return;           // Base case: empty tree
+
+    cout << root->data << " ";     // Visit root
+    preOrderTraversal(root->left);  // Visit left subtree
+    preOrderTraversal(root->right); // Visit right subtree
+}
+```
+
+### Post-order Traversal
+Visits left subtree, then right subtree, then root (useful for deletion).
+```cpp
+void postOrderTraversal(TreeNode* root) {
+    if (!root) return;           // Base case: empty tree
+
+    postOrderTraversal(root->left);  // Visit left subtree
+    postOrderTraversal(root->right); // Visit right subtree
+    cout << root->data << " ";     // Visit root
+}
+```
+
+## 3. Binary Search Tree (BST)
+
+A Binary Search Tree is a binary tree where for each node, all elements in the left subtree are less than the node, and all elements in the right subtree are greater.
+
+### Insert Node
+Inserts a new node into the BST, maintaining the BST property.
+```cpp
+TreeNode* insert(TreeNode* root, int val) {
+    // If tree is empty, create a new node and return it as root
+    if (!root) return new TreeNode(val);
+
+    // Otherwise, recur down the tree
+    if (val < root->data)
+        root->left = insert(root->left, val);  // Insert in left subtree
+    else if (val > root->data)
+        root->right = insert(root->right, val); // Insert in right subtree
+
+    // Equal values are not inserted (assuming no duplicates in BST)
+
+    return root; // Return unchanged root pointer
+}
+```
+
+### Search Node
+Searches for a value in the BST.
+```cpp
+TreeNode* search(TreeNode* root, int val) {
+    // Base cases: root is null or key is present at root
+    if (!root || root->data == val)
+        return root;
+
+    // Key is greater than root's key
+    if (val > root->data)
+        return search(root->right, val);
+
+    // Key is smaller than root's key
+    return search(root->left, val);
+}
+```
+
+### Delete Node
+Deletes a node from the BST, maintaining the BST property.
+```cpp
+TreeNode* findMin(TreeNode* node) {
+    TreeNode* current = node;
+    while (current && current->left)
+        current = current->left;
+    return current;
+}
+
+TreeNode* deleteNode(TreeNode* root, int val) {
+    // Base case: Empty tree
+    if (!root) return nullptr;
+
+    // Recur down the tree
+    if (val < root->data)
+        root->left = deleteNode(root->left, val);
+    else if (val > root->data)
+        root->right = deleteNode(root->right, val);
+    else {
+        // Node with only one child or no child
+        if (!root->left) {
+            TreeNode* temp = root->right;
+            delete root;
+            return temp;
+        } else if (!root->right) {
+            TreeNode* temp = root->left;
+            delete root;
+            return temp;
+        }
+
+        // Node with two children: Get the inorder successor (smallest in right subtree)
+        TreeNode* temp = findMin(root->right);
+
+        // Copy the inorder successor's content to this node
+        root->data = temp->data;
+
+        // Delete the inorder successor
+        root->right = deleteNode(root->right, temp->data);
+    }
+    return root;
+}
+```
+
+## 4. Level Order Traversal (BFS)
+Traverses the tree level by level using a queue.
+```cpp
+void levelOrderTraversal(TreeNode* root) {
+    if (!root) return;
+
+    queue<TreeNode*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        int levelSize = q.size();  // Number of nodes at current level
+
+        for (int i = 0; i < levelSize; i++) {
+            TreeNode* node = q.front();
+            q.pop();
+
+            cout << node->data << " ";  // Process current node
+
+            // Add children to queue for next level
+            if (node->left) q.push(node->left);
+            if (node->right) q.push(node->right);
+        }
+        cout << endl;  // New line after each level
+    }
+}
+```
+
+## 5. Height and Depth
+
+### Height of a Tree
+The maximum distance from the root to any leaf node.
+```cpp
+int heightOfTree(TreeNode* root) {
+    if (!root) return 0;  // Height of empty tree is 0
+
+    // Height of tree is max height of left or right subtree + 1
+    int leftHeight = heightOfTree(root->left);
+    int rightHeight = heightOfTree(root->right);
+
+    return max(leftHeight, rightHeight) + 1;
+}
+```
+
+### Depth of a Node
+The distance from the root to the node.
+```cpp
+int depthOfNode(TreeNode* root, TreeNode* node, int depth = 0) {
+    if (!root) return -1;  // Node not found
+
+    if (root == node) return depth;  // Found the node
+
+    // Check in left and right subtrees
+    int leftDepth = depthOfNode(root->left, node, depth + 1);
+    if (leftDepth != -1) return leftDepth;
+
+    return depthOfNode(root->right, node, depth + 1);
+}
+```
+
+## 6. Lowest Common Ancestor (LCA)
+Finds the lowest common ancestor of two nodes in a binary tree.
+```cpp
+TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+    // Base case
+    if (!root || root == p || root == q)
+        return root;
+
+    // Look for keys in left and right subtrees
+    TreeNode* leftLCA = lowestCommonAncestor(root->left, p, q);
+    TreeNode* rightLCA = lowestCommonAncestor(root->right, p, q);
+
+    // If both keys are found in different subtrees, then root is LCA
+    if (leftLCA && rightLCA)
+        return root;
+
+    // Otherwise, return the non-null value
+    return (leftLCA != nullptr) ? leftLCA : rightLCA;
+}
+```
+
+## 7. Diameter of Binary Tree
+The longest path between any two nodes in a tree.
+```cpp
+int diameterOfTree(TreeNode* root, int* height = nullptr) {
+    // Height of left and right subtrees
+    int lh = 0, rh = 0;
+
+    // Left and right diameters
+    int ld = 0, rd = 0;
+
+    if (!root) {
+        if (height) *height = 0;
+        return 0;
+    }
+
+    // Get diameters and heights of left and right subtrees
+    ld = diameterOfTree(root->left, &lh);
+    rd = diameterOfTree(root->right, &rh);
+
+    // Update height for current node
+    if (height) *height = max(lh, rh) + 1;
+
+    // Return max of: left diameter, right diameter, or path through root
+    return max({ld, rd, lh + rh + 1});
+}
+```
+
+## 8. Balanced Binary Tree
+Checks if a binary tree is height-balanced (difference in height of left and right subtrees is not more than 1).
+```cpp
+bool isBalanced(TreeNode* root, int* height = nullptr) {
+    // Heights of left and right subtrees
+    int lh = 0, rh = 0;
+
+    // Base case: empty tree is balanced
+    if (!root) {
+        if (height) *height = 0;
+        return true;
+    }
+
+    // Check if left and right subtrees are balanced
+    bool leftBalanced = isBalanced(root->left, &lh);
+    bool rightBalanced = isBalanced(root->right, &rh);
+
+    // Update height
+    if (height) *height = max(lh, rh) + 1;
+
+    // Tree is balanced if:
+    // 1. Left subtree is balanced
+    // 2. Right subtree is balanced
+    // 3. Difference in heights is not more than 1
+    return leftBalanced && rightBalanced && abs(lh - rh) <= 1;
+}
+```
+
+## 9. Advanced Tree Structures
+
+### AVL Tree
+A self-balancing binary search tree where the heights of the two child subtrees differ by at most one.
+```cpp
+struct AVLNode {
+    int data;
+    AVLNode* left;
+    AVLNode* right;
+    int height;  // Height of the node
+
+    AVLNode(int val) {
+        data = val;
+        left = nullptr;
+        right = nullptr;
+        height = 1;  // New node is initially at height 1
+    }
+};
+
+// Get height of node
+int height(AVLNode* node) {
+    if (!node) return 0;
+    return node->height;
+}
+
+// Get balance factor
+int getBalance(AVLNode* node) {
+    if (!node) return 0;
+    return height(node->left) - height(node->right);
+}
+
+// Right rotate subtree rooted with y
+AVLNode* rightRotate(AVLNode* y) {
+    AVLNode* x = y->left;
+    AVLNode* T2 = x->right;
+
+    // Perform rotation
+    x->right = y;
+    y->left = T2;
+
+    // Update heights
+    y->height = max(height(y->left), height(y->right)) + 1;
+    x->height = max(height(x->left), height(x->right)) + 1;
+
+    return x;  // New root
+}
+
+// Left rotate subtree rooted with x
+AVLNode* leftRotate(AVLNode* x) {
+    AVLNode* y = x->right;
+    AVLNode* T2 = y->left;
+
+    // Perform rotation
+    y->left = x;
+    x->right = T2;
+
+    // Update heights
+    x->height = max(height(x->left), height(x->right)) + 1;
+    y->height = max(height(y->left), height(y->right)) + 1;
+
+    return y;  // New root
+}
+
+// Insert a node
+AVLNode* insert(AVLNode* node, int val) {
+    // 1. Perform standard BST insertion
+    if (!node) return new AVLNode(val);
+
+    if (val < node->data)
+        node->left = insert(node->left, val);
+    else if (val > node->data)
+        node->right = insert(node->right, val);
+    else  // Equal values not allowed
+        return node;
+
+    // 2. Update height of this ancestor node
+    node->height = 1 + max(height(node->left), height(node->right));
+
+    // 3. Get the balance factor
+    int balance = getBalance(node);
+
+    // Left Left Case
+    if (balance > 1 && val < node->left->data)
+        return rightRotate(node);
+
+    // Right Right Case
+    if (balance < -1 && val > node->right->data)
+        return leftRotate(node);
+
+    // Left Right Case
+    if (balance > 1 && val > node->left->data) {
+        node->left = leftRotate(node->left);
+        return rightRotate(node);
+    }
+
+    // Right Left Case
+    if (balance < -1 && val < node->right->data) {
+        node->right = rightRotate(node->right);
+        return leftRotate(node);
+    }
+
+    // Return unchanged node pointer
+    return node;
+}
+```
+
+### Trie (Prefix Tree)
+A tree-like data structure used to store a dynamic set of strings, particularly useful for quick prefix searches.
+```cpp
+struct TrieNode {
+    TrieNode* children[26];  // Assuming only lowercase English letters
+    bool isEndOfWord;
+
+    TrieNode() {
+        for (int i = 0; i < 26; i++)
+            children[i] = nullptr;
+        isEndOfWord = false;
+    }
+};
+
+class Trie {
+private:
+    TrieNode* root;
+
+public:
+    Trie() {
+        root = new TrieNode();
+    }
+
+    // Insert a word into the trie
+    void insert(string word) {
+        TrieNode* crawler = root;
+        for (char c : word) {
+            int index = c - 'a';
+            if (!crawler->children[index])
+                crawler->children[index] = new TrieNode();
+            crawler = crawler->children[index];
+        }
+        crawler->isEndOfWord = true;
+    }
+
+    // Search for a word in the trie
+    bool search(string word) {
+        TrieNode* crawler = root;
+        for (char c : word) {
+            int index = c - 'a';
+            if (!crawler->children[index])
+                return false;
+            crawler = crawler->children[index];
+        }
+        return crawler->isEndOfWord;
+    }
+
+    // Check if any word with given prefix exists
+    bool startsWith(string prefix) {
+        TrieNode* crawler = root;
+        for (char c : prefix) {
+            int index = c - 'a';
+            if (!crawler->children[index])
+                return false;
+            crawler = crawler->children[index];
+        }
+        return true;
+    }
+};
+```
+
+## 10. Practice Problems and Examples
+
+### Serialize and Deserialize Binary Tree
+Converts a binary tree to a string and back.
+```cpp
+// Encodes a tree to a single string
+string serialize(TreeNode* root) {
+    if (!root) return "X,";  // X represents null
+
+    string leftSerialized = serialize(root->left);
+    string rightSerialized = serialize(root->right);
+
+    return to_string(root->data) + "," + leftSerialized + rightSerialized;
+}
+
+// Helper function for deserialize
+TreeNode* deserializeHelper(queue<string>& nodes) {
+    string val = nodes.front();
+    nodes.pop();
+
+    if (val == "X") return nullptr;
+
+    TreeNode* root = new TreeNode(stoi(val));
+    root->left = deserializeHelper(nodes);
+    root->right = deserializeHelper(nodes);
+
+    return root;
+}
+
+// Decodes your encoded data to tree
+TreeNode* deserialize(string data) {
+    queue<string> nodes;
+    string val;
+
+    // Split the string by commas
+    for (char c : data) {
+        if (c == ',') {
+            nodes.push(val);
+            val.clear();
+        } else {
+            val.push_back(c);
+        }
+    }
+    if (!val.empty()) nodes.push(val);
+
+    return deserializeHelper(nodes);
+}
+```
+**Use Case:** Storing trees in databases or transmitting them over networks.
+
+### Check if Binary Tree is a Binary Search Tree
+Verifies if a binary tree follows the BST property.
+```cpp
+bool isBST(TreeNode* root, TreeNode* min = nullptr, TreeNode* max = nullptr) {
+    // An empty tree is a BST
+    if (!root) return true;
+
+    // Check if current node's value is within valid range
+    if (min && root->data <= min->data) return false;
+    if (max && root->data >= max->data) return false;
+
+    // Check recursively for left and right subtrees
+    // Left subtree: all nodes must be less than root
+    // Right subtree: all nodes must be greater than root
+    return isBST(root->left, min, root) && isBST(root->right, root, max);
+}
+```
+**Use Case:** Validating BST property before performing BST-specific operations.
+
+### Path Sum
+Checks if there is a root-to-leaf path that sums to a given target.
+```cpp
+bool hasPathSum(TreeNode* root, int targetSum) {
+    // Base case: empty tree
+    if (!root) return false;
+
+    // Subtract current node's value from target
+    targetSum -= root->data;
+
+    // If this is a leaf node and target became 0, we found a valid path
+    if (!root->left && !root->right)
+        return targetSum == 0;
+
+    // Otherwise, check both subtrees
+    return hasPathSum(root->left, targetSum) || hasPathSum(root->right, targetSum);
+}
+```
+**Use Case:** Finding financial transaction paths or decision trees.
+
+### Construct Binary Tree from Inorder and Preorder
+Reconstructs a binary tree from its inorder and preorder traversals.
+```cpp
+TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+    unordered_map<int, int> inorderMap;
+    for (int i = 0; i < inorder.size(); i++)
+        inorderMap[inorder[i]] = i;
+
+    return buildTreeHelper(preorder, 0, preorder.size() - 1, inorder, 0, inorder.size() - 1, inorderMap);
+}
+
+TreeNode* buildTreeHelper(vector<int>& preorder, int preStart, int preEnd,
+                         vector<int>& inorder, int inStart, int inEnd,
+                         unordered_map<int, int>& inorderMap) {
+    if (preStart > preEnd || inStart > inEnd)
+        return nullptr;
+
+    // Root is first element in preorder traversal
+    TreeNode* root = new TreeNode(preorder[preStart]);
+
+    // Find position of root in inorder traversal
+    int inRoot = inorderMap[root->data];
+
+    // Calculate size of left subtree
+    int leftSize = inRoot - inStart;
+
+    // Build left and right subtrees recursively
+    root->left = buildTreeHelper(preorder, preStart + 1, preStart + leftSize,
+                                inorder, inStart, inRoot - 1, inorderMap);
+    root->right = buildTreeHelper(preorder, preStart + leftSize + 1, preEnd,
+                                 inorder, inRoot + 1, inEnd, inorderMap);
+
+    return root;
+}
+```
+**Use Case:** Tree reconstruction in databases, file systems, or expression parsing.
+
+### Vertical Order Traversal
+Traverses a binary tree vertically.
+```cpp
+vector<vector<int>> verticalOrder(TreeNode* root) {
+    vector<vector<int>> result;
+    if (!root) return result;
+
+    // Map to store nodes at each horizontal distance
+    map<int, vector<int>> columnTable;
+
+    // Queue for level order traversal with horizontal distance
+    queue<pair<TreeNode*, int>> q;
+    q.push({root, 0});
+
+    while (!q.empty()) {
+        auto [node, hd] = q.front();
+        q.pop();
+
+        columnTable[hd].push_back(node->data);
+
+        if (node->left) q.push({node->left, hd - 1});
+        if (node->right) q.push({node->right, hd + 1});
+    }
+
+    // Extract result from the map
+    for (auto& column : columnTable)
+        result.push_back(column.second);
+
+    return result;
+}
+```
+**Use Case:** Visualizing trees, organizing hierarchical data by columns.
+
+## 11. Summary of Techniques
+
+| Technique                   | Use Case                                                            |
+|-----------------------------|---------------------------------------------------------------------|
+| **In-order Traversal**      | Visit nodes in sorted order in BST                                 |
+| **Pre-order Traversal**     | Create a copy of the tree, prefix expression trees                |
+| **Post-order Traversal**    | Delete a tree, postfix expression trees                           |
+| **Level Order Traversal**   | Process tree by levels (breadth-first)                           |
+| **BST Operations**          | Efficient search, insert, delete in sorted data                   |
+| **Tree Balancing**          | Maintain O(log n) height for operations (AVL, Red-Black)          |
+| **Lowest Common Ancestor**  | Find relationships in hierarchies, taxonomies                     |
+| **Path Sum**                | Find specific paths in decision trees                             |
+| **Trie**                    | Efficient prefix search, autocomplete, word dictionaries          |
+| **Serialization**           | Store & transmit tree structures                                  |
+| **Vertical Order**          | Organize nodes by horizontal distance                             |
+| **Tree Construction**       | Build trees from traversals or sorted arrays                      |
+
+> This summary equips you with the techniques needed to master classic and advanced tree problems!
