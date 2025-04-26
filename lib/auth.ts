@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
     GitHubProvider({
       clientId: env.GITHUB_CLIENT_ID,
       clientSecret: env.GITHUB_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
     }),
     EmailProvider({
       from: env.GMAIL_USER,
@@ -51,7 +52,7 @@ export const authOptions: NextAuthOptions = {
           html: `
             <div style="padding: 24px; font-family: system-ui, sans-serif;">
               <h1 style="margin-bottom: 16px;">Sign in to ${siteConfig.name}</h1>
-              <a href="${url}" style="display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 4px;">
+              <a href="${url}" style="display: inline-block; padding: 12px 24px; background: #0284c7; color: white; text-decoration: none; border-radius: 4px; font-weight: 500; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
                 Sign in
               </a>
               <p style="margin-top: 16px; color: #666;">
@@ -73,6 +74,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+// Enable automatic linking of email accounts across different providers
   callbacks: {
     async session({ token, session }) {
       if (token) {
