@@ -15,6 +15,16 @@ const transporter = nodemailer.createTransport({
     user: env.GMAIL_USER,  // Your Gmail address
     pass: env.GMAIL_PASSWORD,  // Your Gmail App Password (not your regular password)
   },
+  logger: true,  // Enable logging for debugging
+  debug: true,  // Enable debug output
+});
+// Verify transporter configuration
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error('Transporter verification failed:', error);
+  } else {
+    console.log('Email server is ready');
+  }
 });
 
 export const authOptions: NextAuthOptions = {
@@ -31,21 +41,34 @@ export const authOptions: NextAuthOptions = {
       clientSecret: env.GITHUB_CLIENT_SECRET,
     }),
     EmailProvider({
-      from: env.GMAIL_USER,  // The sender's email address
+      from: env.GMAIL_USER,
       sendVerificationRequest: async ({ identifier, url, provider }) => {
         const message = {
-          from: provider.from as string,  // The 'from' email address set above
+          from: provider.from,
           to: identifier,
-          subject: "Your sign-in link for our application",
-          text: `To complete your login, click the following link: ${url}`,
-          html: `<p>To complete your login, click the following link: <a href="${url}">Complete Login</a></p>`,
+          subject: `Sign in to ${siteConfig.name}`,
+          text: `Click here to sign in: ${url}`,
+          html: `
+            <div style="padding: 24px; font-family: system-ui, sans-serif;">
+              <h1 style="margin-bottom: 16px;">Sign in to ${siteConfig.name}</h1>
+              <a href="${url}" style="display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 4px;">
+                Sign in
+              </a>
+              <p style="margin-top: 16px; color: #666;">
+                If the button doesn't work, copy and paste this link into your browser:
+                ${url}
+              </p>
+            </div>
+          `,
         };
 
         try {
-          // Send email via Gmail SMTP using Nodemailer
-          await transporter.sendMail(message);
+          console.log('Attempting to send email...', { to: identifier });
+          const result = await transporter.sendMail(message);
+          console.log('Email sent successfully:', result);
         } catch (error) {
-          throw new Error(error.message || "Failed to send verification email");
+          console.error('Failed to send email:', error);
+          throw new Error(`Email sending failed: ${error.message}`);
         }
       },
     }),
