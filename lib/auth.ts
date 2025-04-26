@@ -31,7 +31,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: env.GITHUB_CLIENT_SECRET,
     }),
     EmailProvider({
-      from: "Your App Name <no-reply@yourapp.com>",  // The sender's email address
+      from: env.GMAIL_USER,  // The sender's email address
       sendVerificationRequest: async ({ identifier, url, provider }) => {
         const message = {
           from: provider.from as string,  // The 'from' email address set above
