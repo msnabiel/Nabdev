@@ -3,196 +3,265 @@ title: Arrays
 description: Master arrays in C++ with indexing, prefix sums, sliding windows, and advanced techniques like two pointers, binary search, hashing, and more.
 ---
 
-Arrays are a fundamental data structure. Let’s go step-by-step through their features, uses, and famous techniques with explanations.
+Arrays are a fundamental data structure. Let's go step-by-step through their features, uses, and famous techniques with explanations.
 
 ## 1. Indexing and Basics
+### Accessing array elements efficiently
 
 Arrays in C++ are zero-indexed. That means the first element is at index `0`.
 
 ```cpp
+// Initializing an array with values
 int arr[5] = {10, 20, 30, 40, 50};
-cout << arr[0]; // 10
-cout << arr[4]; // 50
+
+// Accessing first and last elements
+cout << arr[0]; // 10 - first element
+cout << arr[4]; // 50 - last element
 ```
 
 You can also declare and input arrays using loops:
 
 ```cpp
+// Reading array size dynamically
 int n;
 cin >> n;
+
+// Creating an array of size n
 int arr[n];
+
+// Taking input for each element
 for (int i = 0; i < n; i++) {
-    cin >> arr[i];
+    cin >> arr[i]; // Reading each element
 }
 ```
 
----
-
 ## 2. Prefix Sum
+### Optimize range sum queries to constant time
+
 Prefix sum is used to answer range sum queries in constant time.
+
 ```cpp
+// Creating the prefix sum array
 int prefix[n];
-prefix[0] = arr[0];
+prefix[0] = arr[0]; // First element is same
+
+// Building prefix sums
 for (int i = 1; i < n; i++) {
-    prefix[i] = prefix[i - 1] + arr[i];
+    prefix[i] = prefix[i - 1] + arr[i]; // Add current to previous sum
 }
 
-// Sum from l to r
+// Calculate sum from index l to r in O(1) time
 int sum = prefix[r] - (l > 0 ? prefix[l - 1] : 0);
 ```
 
-Problem
-- [Subarray Sum Queries](https://www.geeksforgeeks.org/prefix-sum-array-implementation-applications-competitive-programming/)
-
----
+### Common Applications
+- Subarray sum queries
+- Range updates with difference arrays
+- Cumulative data processing
 
 ## 3. Sliding Window
+### Handle subarrays of fixed or variable size efficiently
 
-Used to handle subarrays of fixed or variable size efficiently.
+Used to process subarrays without redundant calculations.
+
 ```cpp
+// Example: Finding maximum sum subarray of size k
 int maxSum = 0;
 int windowSum = 0;
 
+// Calculate sum of first window
 for (int i = 0; i < k; i++)
     windowSum += arr[i];
-
 maxSum = windowSum;
 
+// Slide the window and update maximum
 for (int i = k; i < n; i++) {
-    windowSum += arr[i] - arr[i - k];
-    maxSum = max(maxSum, windowSum);
+    windowSum += arr[i] - arr[i - k]; // Add new element, remove oldest
+    maxSum = max(maxSum, windowSum);  // Update maximum if needed
 }
 ```
 
----
+### Sliding Window Variations
+- Fixed-size window (as shown above)
+- Variable-size window with constraints
+- Multiple pointers for complex conditions
 
 ## 4. Two Pointers
+### Efficiently process sorted arrays with dual indices
 
-Used when dealing with sorted arrays. Move pointers based on some condition to reduce time complexity.
+Used when dealing with sorted arrays to reduce time complexity.
+
 ```cpp
-int l = 0, r = n - 1;
+// Example: Finding pair with given sum in sorted array
+int l = 0, r = n - 1; // Start with widest window
+
 while (l < r) {
     int sum = arr[l] + arr[r];
+
     if (sum == target) {
-        cout << "Found at " << l << " and " << r;
+        cout << "Found at indices " << l << " and " << r;
         break;
     } else if (sum < target)
-        l++;
+        l++; // Need larger values, move left pointer right
     else
-        r--;
+        r--; // Need smaller values, move right pointer left
 }
 ```
-
----
 
 ## 5. Binary Search
+### Find elements in sorted arrays with logarithmic time
 
-Efficiently find elements in sorted arrays. Divide the array in halves.
+Efficiently search by dividing the array in halves.
 
 ```cpp
+// Classic binary search implementation
 int low = 0, high = n - 1;
+
 while (low <= high) {
-    int mid = (low + high) / 2;
+    int mid = low + (high - low) / 2; // Prevent potential overflow
+
     if (arr[mid] == target)
-        return mid;
+        return mid; // Element found
     else if (arr[mid] < target)
-        low = mid + 1;
+        low = mid + 1; // Search in right half
     else
-        high = mid - 1;
+        high = mid - 1; // Search in left half
 }
-return -1;
+
+return -1; // Element not found
 ```
 
-Use Case
-Search, lower_bound, upper_bound.
+### Binary Search Applications
+- Finding exact matches
+- Lower bound (first element >= target)
+- Upper bound (first element > target)
+- Search in rotated or modified sorted arrays
 
----
+## 6. Hashing
+### Fast lookups using hash-based containers
 
-## 6. Hashing (unordered_map / unordered_set)
-Used for fast lookups, finding duplicates, frequency counting, etc.
+Used for constant time lookups, finding duplicates, and frequency counting.
 
-Example : Find if array has duplicates
 ```cpp
-unordered_set<int> s;
+// Example: Check if array has duplicates
+unordered_set<int> s; // Hash set for fast lookups
+
 for (int i = 0; i < n; i++) {
+    // If element already exists in set, we found a duplicate
     if (s.find(arr[i]) != s.end())
         return true;
+
+    // Otherwise add it to the set
     s.insert(arr[i]);
 }
-return false;
+
+return false; // No duplicates found
 ```
 
----
+### Hash-Based Applications
+- Count occurrences with `unordered_map`
+- Two-sum and k-sum problems
+- Subarray with given sum
+- Tracking running state
 
 ## 7. Frequency Array
+### Track element occurrences with direct indexing
 
-
-Used when array values are bounded (e.g. 0 to 1000000).
+Efficient when array values are bounded within a manageable range.
 
 ```cpp
-int freq[100001] = {0};
+// Example: Count frequency of each element
+int freq[100001] = {0}; // Initialize all to zero
+
+// Count occurrences of each value
 for (int i = 0; i < n; i++) {
-    freq[arr[i]]++;
+    freq[arr[i]]++; // Increment count for this value
 }
+
+// Now freq[x] contains the count of value x in the array
 ```
 
-Use Cases
-- Count occurrences
-- Range frequencies
+### Frequency Array Benefits
+- Constant time lookups and updates
+- More memory efficient than hash maps for dense ranges
+- Quick access to element counts
 
----
-
-## 8. Famous Problems
+## 8. Famous Problems and Solutions
 
 ### 1. Kadane's Algorithm
-> Maximum subarray sum
+*Finding maximum subarray sum*
+
 ```cpp
-int max_so_far = arr[0], curr = arr[0];
+// Find maximum sum subarray
+int max_so_far = arr[0]; // Best sum found
+int curr_max = arr[0];   // Current running sum
+
 for (int i = 1; i < n; i++) {
-    curr = max(arr[i], curr + arr[i]);
-    max_so_far = max(max_so_far, curr);
+    // Either start new subarray or extend existing one
+    curr_max = max(arr[i], curr_max + arr[i]);
+
+    // Update global maximum if needed
+    max_so_far = max(max_so_far, curr_max);
 }
+
+// max_so_far contains the maximum subarray sum
 ```
 
-### 2. Subarray with Given Sum (Two Pointers)
+### 2. Subarray with Given Sum
+*Using sliding window with two pointers*
+
 ```cpp
+// Find if subarray with given sum exists
 int sum = 0, l = 0;
+
 for (int r = 0; r < n; r++) {
-    sum += arr[r];
-    while (sum > target)
+    sum += arr[r]; // Add current element
+
+    // Shrink window from left if sum becomes too large
+    while (sum > target && l <= r)
         sum -= arr[l++];
+
+    // Check if we found the target sum
     if (sum == target)
         return true;
 }
+
+return false; // No subarray found
 ```
 
-### 3. Count Subarrays with Sum K (HashMap)
+### 3. Count Subarrays with Sum K
+*Using hash map for prefix sums*
+
 ```cpp
+// Count subarrays with sum exactly K
 unordered_map<int, int> prefixCount;
-prefixCount[0] = 1;
+prefixCount[0] = 1; // Empty subarray has sum 0
 int currSum = 0, count = 0;
 
 for (int i = 0; i < n; i++) {
-    currSum += arr[i];
+    currSum += arr[i]; // Update running sum
+
+    // If we've seen (currSum - K) before, those positions create valid subarrays
     if (prefixCount.find(currSum - k) != prefixCount.end())
         count += prefixCount[currSum - k];
+
+    // Update prefix sum frequency
     prefixCount[currSum]++;
 }
+
+// count contains the number of subarrays with sum K
 ```
 
----
+## 9. Technique Selection Guide
 
-## 9. Summary of Techniques
+| Technique | When to Use | Time Complexity |
+|-----------|-------------|----------------|
+| **Two Pointers** | Sorted arrays, pair finding, subarrays with conditions | O(n) |
+| **Binary Search** | Finding elements or positions in sorted arrays | O(log n) |
+| **Hashing** | Fast lookups, duplicates, arbitrary value tracking | O(1) lookup |
+| **Frequency Array** | When values are small integers in bounded range | O(1) lookup |
+| **Prefix Sum** | Range sum queries, cumulative properties | O(1) query after O(n) prep |
+| **Sliding Window** | Subarrays of fixed/variable size with optimization | O(n) |
+| **Kadane's Algorithm** | Maximum subarray problems | O(n) |
 
-| Technique       | When to Use                                       |
-|----------------|----------------------------------------------------|
-| **Two Pointers** | For sorted arrays, pairs, or subarray conditions  |
-| **Binary Search** | For finding elements or positions in sorted arrays |
-| **Hashing**       | Fast lookups, duplicates, prefix frequencies     |
-| **Frequency Array** | When values are small integers                 |
-| **Prefix Sum**    | Constant time range sum queries                  |
-| **Sliding Window**| Efficiently manage subarrays of fixed/var size   |
-
----
-
-You now have a complete arsenal to solve any array-related problem in C++!
+With these techniques mastered, you'll be well-equipped to solve virtually any array-related problem in competitive programming!
