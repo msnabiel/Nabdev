@@ -122,12 +122,12 @@ export function Editor({ post }: EditorProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="grid w-full gap-10">
-        <div className="flex w-full items-center justify-between">
-          <div className="flex items-center space-x-10">
+      <div className="grid w-full gap-4 md:gap-10">
+        <div className="flex w-full flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:space-x-4 sm:space-y-0">
             <Link
               href="/dashboard"
-              className={cn(buttonVariants({ variant: "ghost" }))}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
             >
               <>
                 <Icons.chevronLeft className="mr-2 size-4" />
@@ -138,23 +138,29 @@ export function Editor({ post }: EditorProps) {
               {post.published ? "Published" : "Draft"}
             </p>
           </div>
-          <button type="submit" className={cn(buttonVariants())}>
+          <button
+            type="submit"
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "w-full sm:w-auto"
+            )}
+          >
             {isSaving && (
               <Icons.spinner className="mr-2 size-4 animate-spin" />
             )}
             <span>Save</span>
           </button>
         </div>
-        <div className="prose prose-stone mx-auto w-[800px] dark:prose-invert">
+        <div className="prose prose-stone mx-auto w-full max-w-[800px] px-4 dark:prose-invert sm:px-6">
           <TextareaAutosize
             autoFocus
             id="title"
             defaultValue={post.title}
             placeholder="Post title"
-            className="w-full resize-none appearance-none overflow-hidden bg-transparent text-5xl font-bold focus:outline-none"
+            className="w-full resize-none appearance-none overflow-hidden bg-transparent text-3xl font-bold focus:outline-none sm:text-4xl md:text-5xl"
             {...register("title")}
           />
-          <div id="editor" className="min-h-[500px]" />
+          <div id="editor" className="min-h-[300px] sm:min-h-[400px] md:min-h-[500px]" />
           <p className="text-sm text-gray-500">
             Use{" "}
             <kbd className="rounded-md border bg-muted px-1 text-xs uppercase">
