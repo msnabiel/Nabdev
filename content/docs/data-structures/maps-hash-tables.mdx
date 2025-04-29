@@ -1,0 +1,348 @@
+---
+title: Maps & Hash Tables
+description: Master hash tables and maps with implementations, collision handling, load factor balancing, and practical applications in C++.
+---
+
+Hash tables are fundamental data structures that provide constant-time average case operations for insertions, deletions, and lookups. Let's explore their implementation and various techniques.
+
+## 1. Basics & Structure
+
+A hash table uses a hash function to map keys to array indices, storing key-value pairs.
+
+```cpp
+template<typename K, typename V>
+class HashNode {
+public:
+    K key;
+    V value;
+    HashNode* next;
+
+    HashNode(const K& k, const V& v) {
+        key = k;
+        value = v;
+        next = nullptr;
+    }
+};
+```
+
+## 2. Hash Function Implementation
+
+### Basic Hash Function
+A good hash function should distribute keys uniformly across the table.
+
+```cpp
+size_t hashFunction(const string& key, size_t tableSize) {
+    size_t hash = 0;
+    for (char c : key) {
+        hash = (hash * 31 + c) % tableSize;  // Using prime number 31
+    }
+    return hash;
+}
+```
+
+### Custom Type Hashing
+For custom types, implement a hash function or use std::hash.
+
+```cpp
+struct Point {
+    int x, y;
+
+    // Custom hash function for Point
+    size_t operator()(const Point& p) const {
+        return hash<int>()(p.x) ^ (hash<int>()(p.y) << 1);
+    }
+};
+```
+
+## 3. Collision Handling
+
+### Chaining Method
+Handles collisions by maintaining linked lists at each bucket.
+
+```cpp
+template<typename K, typename V>
+class HashMap {
+private:
+    vector<HashNode<K,V>*> buckets;
+    size_t size;
+
+public:
+    HashMap(size_t capacity = 16) {
+        buckets.resize(capacity, nullptr);
+        size = 0;
+    }
+
+    void insert(const K& key, const V& value) {
+        size_t index = hashFunction(key, buckets.size());
+        HashNode<K,V>* node = buckets[index];
+
+        while (node) {
+            if (node->key == key) {
+                node->value = value;  // Update existing key
+                return;
+            }
+            node = node->next;
+        }
+
+        // Insert new node at the beginning of the chain
+        HashNode<K,V>* newNode = new HashNode<K,V>(key, value);
+        newNode->next = buckets[index];
+        buckets[index] = newNode;
+        size++;
+    }
+};
+```
+
+### Open Addressing
+Linear probing to handle collisions by finding next empty slot.
+
+```cpp
+bool insert(const K& key, const V& value) {
+    size_t index = hashFunction(key, capacity);
+    size_t originalIndex = index;
+
+    while (table[index].occupied) {
+        if (table[index].key == key) {
+            table[index].value = value;  // Update existing key
+            return true;
+        }
+        index = (index + 1) % capacity;  // Linear probing
+        if (index == originalIndex) return false;  // Table is full
+    }
+
+    table[index] = Entry(key, value);
+    size++;
+    return true;
+}
+```
+
+## 4. Load Factor & Resizing
+
+Monitor and maintain load factor to ensure performance.
+
+```cpp
+void checkAndResize() {
+    float loadFactor = static_cast<float>(size) / buckets.size();
+    if (loadFactor > 0.75) {  // Threshold for resizing
+        resize(buckets.size() * 2);
+    }
+}
+
+void resize(size_t newCapacity) {
+    vector<HashNode<K,V>*> oldBuckets = buckets;
+    buckets.clear();
+    buckets.resize(newCapacity, nullptr);
+    size = 0;
+
+    // Rehash all existing entries
+    for (auto bucket : oldBuckets) {
+        while (bucket) {
+            insert(bucket->key, bucket->value);
+            HashNode<K,V>* temp = bucket;
+            bucket = bucket->next;
+            delete temp;
+        }
+    }
+}
+```
+
+## 5. Standard Library Implementation
+
+Using C++'s unordered_map for practical applications.
+
+```cpp
+#include <unordered_map>
+
+unordered_map<string, int> cache;
+
+// Insert or update
+cache["key"] = 100;
+
+// Check if key exists
+if (cache.find("key") != cache.end()) {
+    cout << "Found: " << cache["key"] << endl;
+}
+
+// Iterate over key-value pairs
+for (const auto& [key, value] : cache) {
+    cout << key << ": " << value << endl;
+}
+```
+
+## 6. Common Applications
+
+### Frequency Counter
+Count occurrences of elements in an array.
+
+```cpp
+unordered_map<int, int> countFrequency(vector<int>& nums) {
+    unordered_map<int, int> freq;
+    for (int num : nums) {
+        freq[num]++;
+    }
+    return freq;
+}
+```
+
+### Two Sum Problem
+Find pairs that sum to a target value.
+
+```cpp
+vector<int> twoSum(vector<int>& nums, int target) {
+    unordered_map<int, int> map;
+    for (int i = 0; i < nums.size(); i++) {
+        int complement = target - nums[i];
+        if (map.find(complement) != map.end()) {
+            return {map[complement], i};
+        }
+        map[nums[i]] = i;
+    }
+    return {};
+}
+```
+
+### Cache Implementation
+Simple LRU cache using hash map and doubly linked list.
+
+```cpp
+class LRUCache {
+    int capacity;
+    list<pair<int, int>> items;  // (key, value) pairs
+    unordered_map<int, list<pair<int, int>>::iterator> cache;
+
+public:
+    LRUCache(int cap) : capacity(cap) {}
+
+    int get(int key) {
+        if (cache.find(key) == cache.end()) return -1;
+
+        // Move to front (most recently used)
+        items.splice(items.begin(), items, cache[key]);
+        return cache[key]->second;
+    }
+
+    void put(int key, int value) {
+        if (cache.find(key) != cache.end()) {
+            // Update existing
+            cache[key]->second = value;
+            items.splice(items.begin(), items, cache[key]);
+            return;
+        }
+
+        // Add new
+        if (cache.size() >= capacity) {
+            // Remove least recently used
+            cache.erase(items.back().first);
+            items.pop_back();
+        }
+
+        items.push_front({key, value});
+        cache[key] = items.begin();
+    }
+};
+```
+
+## 7. Performance Optimization
+
+### Perfect Hashing
+For static sets, achieve O(1) worst-case lookup.
+
+```cpp
+class PerfectHash {
+private:
+    vector<int> table;
+    size_t (*hashFunction)(const string&);
+
+public:
+    PerfectHash(const vector<string>& keys) {
+        // Calculate perfect hash function parameters
+        // Initialize table with perfect mapping
+    }
+};
+```
+
+### Robin Hood Hashing
+Minimize probe sequence length variance.
+
+```cpp
+struct Entry {
+    K key;
+    V value;
+    size_t dist = 0;  // Distance from ideal position
+};
+
+bool insert(const K& key, const V& value) {
+    size_t idx = hashFunction(key, capacity);
+    Entry newEntry{key, value, 0};
+
+    while (true) {
+        if (!table[idx].occupied) {
+            table[idx] = newEntry;
+            return true;
+        }
+
+        if (table[idx].dist < newEntry.dist) {
+            // Robin Hood: steal from the rich
+            swap(table[idx], newEntry);
+        }
+
+        idx = (idx + 1) % capacity;
+        newEntry.dist++;
+    }
+}
+```
+
+## 8. Common Pitfalls & Best Practices
+
+1. **Choose Appropriate Initial Size**
+```cpp
+// Good practice: Initialize with power of 2
+size_t initialCapacity = 16;
+while (initialCapacity < expectedSize * 1.3) {
+    initialCapacity *= 2;
+}
+```
+
+2. **Handle Collisions Properly**
+```cpp
+// Bad: Ignore collisions
+table[hash(key)] = value;
+
+// Good: Handle collisions
+while (table[index].occupied) {
+    if (table[index].key == key) {
+        table[index].value = value;
+        return;
+    }
+    index = (index + 1) % capacity;
+}
+```
+
+3. **Use Strong Hash Functions**
+```cpp
+// Weak hash function
+size_t badHash(const string& key) {
+    return key.length();  // Many collisions
+}
+
+// Strong hash function
+size_t goodHash(const string& key) {
+    size_t hash = 0;
+    for (char c : key) {
+        hash = (hash * 31 + c);
+    }
+    return hash;
+}
+```
+
+## 9. Summary of Techniques
+
+| Technique | Time Complexity | Space Complexity | Use Case |
+|-----------|----------------|------------------|----------|
+| Chaining | O(1) average | O(n) | General purpose |
+| Open Addressing | O(1) average | O(n) | Memory-conscious |
+| Perfect Hashing | O(1) worst | O(n) | Static data |
+| Robin Hood | O(1) average | O(n) | Reduced variance |
+| Cuckoo Hashing | O(1) average | O(n) | Worst-case guarantee |
+
+> This comprehensive guide covers the essential concepts and implementations of hash tables and maps, providing you with the knowledge to effectively use these powerful data structures in your applications!

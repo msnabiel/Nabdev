@@ -53,9 +53,10 @@ export const docsConfig: DocsConfig = {
           href: "/docs/data-structures/queues",
         },
         {
-          title: "Hash Tables",
-          href: "/docs/data-structures/hash-tables",
+          title: "Maps & Hash Tables",
+          href: "/docs/data-structures/maps-hash-tables",
         },
+        /*
         {
           title: "Sets",
           href: "/docs/data-structures/sets",
@@ -78,7 +79,7 @@ export const docsConfig: DocsConfig = {
           title: "Search",
           href: "/docs/in-progress",
           disabled: true,
-        },
+        },*/
       ],
     },
     {
