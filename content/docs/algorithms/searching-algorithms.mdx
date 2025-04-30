@@ -1,10 +1,589 @@
 ---
-title: Not Implemented
-description: This page is in progress.
+title: Searching Algorithms
+description: Master searching algorithms in C++ with implementations of linear search, binary search, interpolation search, and advanced techniques like hashing, DFS, and BFS.
 ---
 
-<Callout>
+Searching algorithms are fundamental techniques used to find the presence or position of an element within a collection of data. Let's explore various searching methods, their implementations, and when to use each approach.
 
-This site is a work in progress. If you see dummy text on a page, it means I'm still working on it. You can follow updates on GitHub [@msnabiel](https://github.com/msnabiel/nabdev).
+## 1. Linear Search
 
-</Callout>
+Linear search sequentially checks each element until it finds a match or reaches the end of the collection.
+
+```cpp
+int linearSearch(int arr[], int n, int target) {
+    for (int i = 0; i < n; i++) {
+        if (arr[i] == target) {
+            return i;  // Return the index of the found element
+        }
+    }
+    return -1;  // Return -1 if the element is not found
+}
+```
+
+**Time Complexity**: O(n)
+**Space Complexity**: O(1)
+**Best Case**: O(1) when the element is at the first position
+**Worst Case**: O(n) when the element is at the last position or not present
+
+**Use Cases**:
+- Small datasets where setup cost matters
+- Unsorted arrays where other methods can't be used
+- When searching only needs to be done once
+
+## 2. Binary Search
+
+Binary search works on sorted arrays by repeatedly dividing the search interval in half.
+
+```cpp
+int binarySearch(int arr[], int left, int right, int target) {
+    while (left <= right) {
+        int mid = left + (right - left) / 2;  // Avoid potential overflow
+
+        // Check if target is present at mid
+        if (arr[mid] == target)
+            return mid;
+
+        // If target is greater, ignore left half
+        if (arr[mid] < target)
+            left = mid + 1;
+
+        // If target is smaller, ignore right half
+        else
+            right = mid - 1;
+    }
+
+    // Element is not present
+    return -1;
+}
+```
+
+**Recursive Implementation**:
+
+```cpp
+int binarySearchRecursive(int arr[], int left, int right, int target) {
+    if (right >= left) {
+        int mid = left + (right - left) / 2;
+
+        // If the element is present at the middle
+        if (arr[mid] == target)
+            return mid;
+
+        // If element is smaller than mid, search in left subarray
+        if (arr[mid] > target)
+            return binarySearchRecursive(arr, left, mid - 1, target);
+
+        // Else search in right subarray
+        return binarySearchRecursive(arr, mid + 1, right, target);
+    }
+
+    // Element is not present
+    return -1;
+}
+```
+
+**Time Complexity**: O(log n)
+**Space Complexity**: O(1) for iterative, O(log n) for recursive due to call stack
+**Best Case**: O(1) when the element is at the middle position
+**Worst Case**: O(log n) when the element is not present or at the boundaries
+
+**Use Cases**:
+- Sorted arrays
+- Finding elements in large datasets efficiently
+- Finding insertion positions in sorted arrays
+
+## 3. Lower and Upper Bound
+
+Extensions of binary search used to find the first occurrence of an element or the insertion point.
+
+### Lower Bound (First Occurrence)
+Finds the first index where the element is greater than or equal to the target.
+
+```cpp
+int lowerBound(int arr[], int n, int target) {
+    int left = 0, right = n - 1;
+    int result = n;  // Default if no valid index is found
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+
+        if (arr[mid] >= target) {
+            result = mid;  // Update result and search in the left half
+            right = mid - 1;
+        }
+        else {
+            left = mid + 1;  // Search in the right half
+        }
+    }
+
+    return result;
+}
+```
+
+### Upper Bound (After Last Occurrence)
+Finds the first index where the element is strictly greater than the target.
+
+```cpp
+int upperBound(int arr[], int n, int target) {
+    int left = 0, right = n - 1;
+    int result = n;  // Default if no valid index is found
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+
+        if (arr[mid] > target) {
+            result = mid;  // Update result and search in the left half
+            right = mid - 1;
+        }
+        else {
+            left = mid + 1;  // Search in the right half
+        }
+    }
+
+    return result;
+}
+```
+
+**Time Complexity**: O(log n)
+**Space Complexity**: O(1)
+
+**Use Cases**:
+- Finding first/last occurrence in sorted arrays with duplicates
+- Range queries in sorted arrays
+- Implementing count of elements in a range
+
+## 4. Interpolation Search
+
+A variant of binary search that works best on uniformly distributed sorted arrays.
+
+```cpp
+int interpolationSearch(int arr[], int n, int target) {
+    int low = 0, high = n - 1;
+
+    while (low <= high && target >= arr[low] && target <= arr[high]) {
+        if (low == high) {
+            if (arr[low] == target) return low;
+            return -1;
+        }
+
+        // Interpolation formula
+        int pos = low + ((double)(high - low) / (arr[high] - arr[low])) * (target - arr[low]);
+
+        // Target found
+        if (arr[pos] == target)
+            return pos;
+
+        // If target is larger, search in right subarray
+        if (arr[pos] < target)
+            low = pos + 1;
+
+        // If target is smaller, search in left subarray
+        else
+            high = pos - 1;
+    }
+
+    return -1;  // Element not found
+}
+```
+
+**Time Complexity**:
+- Average Case: O(log log n) for uniformly distributed data
+- Worst Case: O(n) for highly skewed distributions
+**Space Complexity**: O(1)
+
+**Use Cases**:
+- Large, sorted, uniformly distributed arrays
+- When binary search's constant division by 2 is less efficient
+
+## 5. Depth-First Search (DFS)
+
+A traversal algorithm for trees and graphs that explores as far as possible along each branch before backtracking.
+
+```cpp
+class Graph {
+    int V;  // Number of vertices
+    vector<int> *adj;  // Adjacency list
+
+public:
+    Graph(int V) {
+        this->V = V;
+        adj = new vector<int>[V];
+    }
+
+    void addEdge(int v, int w) {
+        adj[v].push_back(w);  // Add w to v's list
+    }
+
+    // DFS utility function
+    void DFSUtil(int vertex, vector<bool> &visited) {
+        // Mark current node as visited and print
+        visited[vertex] = true;
+        cout << vertex << " ";
+
+        // Recur for all adjacent vertices
+        for (auto i = adj[vertex].begin(); i != adj[vertex].end(); ++i) {
+            if (!visited[*i]) {
+                DFSUtil(*i, visited);
+            }
+        }
+    }
+
+    // DFS traversal
+    void DFS(int startVertex) {
+        // Mark all vertices as not visited
+        vector<bool> visited(V, false);
+
+        // Call the recursive helper function
+        DFSUtil(startVertex, visited);
+    }
+
+    // DFS for disconnected graph
+    void DFSFull() {
+        vector<bool> visited(V, false);
+
+        for (int i = 0; i < V; i++) {
+            if (!visited[i]) {
+                DFSUtil(i, visited);
+            }
+        }
+    }
+};
+```
+
+**Time Complexity**: O(V + E) where V is vertices and E is edges
+**Space Complexity**: O(V) for the visited array and recursion stack
+
+**Use Cases**:
+- Detecting cycles in graphs
+- Pathfinding algorithms
+- Topological sorting
+- Solving puzzles like mazes
+- Connected components in graphs
+
+## 6. Breadth-First Search (BFS)
+
+A traversal algorithm that explores all neighbors at the present depth before moving to nodes at the next depth level.
+
+```cpp
+void BFS(int startVertex) {
+    // Mark all vertices as not visited
+    vector<bool> visited(V, false);
+
+    // Create a queue for BFS
+    queue<int> queue;
+
+    // Mark the current node as visited and enqueue it
+    visited[startVertex] = true;
+    queue.push(startVertex);
+
+    while (!queue.empty()) {
+        // Dequeue a vertex from queue and print it
+        int currentVertex = queue.front();
+        cout << currentVertex << " ";
+        queue.pop();
+
+        // Get all adjacent vertices of the dequeued vertex
+        // If an adjacent has not been visited, mark it visited and enqueue it
+        for (auto i = adj[currentVertex].begin(); i != adj[currentVertex].end(); ++i) {
+            if (!visited[*i]) {
+                visited[*i] = true;
+                queue.push(*i);
+            }
+        }
+    }
+}
+```
+
+**Time Complexity**: O(V + E) where V is vertices and E is edges
+**Space Complexity**: O(V) for the queue and visited array
+
+**Use Cases**:
+- Shortest path in unweighted graphs
+- Finding connected components
+- Testing graph bipartiteness
+- Finding all nodes within a distance k
+
+## 7. Hashing (Direct Access)
+
+Hashing allows constant-time average-case searches by using a hash function to map keys to array indices.
+
+```cpp
+class HashTable {
+    static const int TABLE_SIZE = 10;
+    list<pair<int, string>> table[TABLE_SIZE];
+
+public:
+    // Hash function
+    int hashFunction(int key) {
+        return key % TABLE_SIZE;
+    }
+
+    // Insert a key-value pair
+    void insert(int key, string value) {
+        int hash = hashFunction(key);
+        auto& cell = table[hash];
+
+        // Check if key already exists
+        auto itr = begin(cell);
+        bool keyExists = false;
+
+        while (itr != end(cell)) {
+            if (itr->first == key) {
+                keyExists = true;
+                itr->second = value;
+                break;
+            }
+            itr++;
+        }
+
+        // If key doesn't exist, insert it
+        if (!keyExists) {
+            cell.emplace_back(key, value);
+        }
+    }
+
+    // Search for a key
+    string search(int key) {
+        int hash = hashFunction(key);
+        auto& cell = table[hash];
+
+        for (auto& element : cell) {
+            if (element.first == key) {
+                return element.second;  // Return value if key found
+            }
+        }
+
+        return "Not Found";  // Return not found if key doesn't exist
+    }
+
+    // Remove a key
+    void remove(int key) {
+        int hash = hashFunction(key);
+        auto& cell = table[hash];
+
+        auto itr = begin(cell);
+        bool keyExists = false;
+
+        while (itr != end(cell)) {
+            if (itr->first == key) {
+                keyExists = true;
+                itr = cell.erase(itr);
+                break;
+            }
+            itr++;
+        }
+    }
+};
+```
+
+**Time Complexity**:
+- Average Case: O(1) for lookup, insert, and delete
+- Worst Case: O(n) when many keys hash to same value
+**Space Complexity**: O(n) where n is the number of elements
+
+**Use Cases**:
+- Fast lookups in dictionaries
+- Implementing sets
+- Database indexing
+- Caches
+- Symbol tables in compilers
+
+## 8. Ternary Search
+
+Similar to binary search but divides the search space into three parts.
+
+```cpp
+int ternarySearch(int arr[], int left, int right, int target) {
+    if (right >= left) {
+        // Find the mid1 and mid2
+        int mid1 = left + (right - left) / 3;
+        int mid2 = right - (right - left) / 3;
+
+        // Check if target is at mid1
+        if (arr[mid1] == target)
+            return mid1;
+
+        // Check if target is at mid2
+        if (arr[mid2] == target)
+            return mid2;
+
+        // Check if target is in first part
+        if (target < arr[mid1])
+            return ternarySearch(arr, left, mid1 - 1, target);
+
+        // Check if target is in third part
+        if (target > arr[mid2])
+            return ternarySearch(arr, mid2 + 1, right, target);
+
+        // If target is in middle part
+        return ternarySearch(arr, mid1 + 1, mid2 - 1, target);
+    }
+
+    // Element not found
+    return -1;
+}
+```
+
+**Time Complexity**: O(log₃ n)
+**Space Complexity**: O(log₃ n) for recursion stack
+
+**Use Cases**:
+- Finding minimums/maximums in unimodal functions
+- When dividing the search space by 3 is more efficient
+
+## 9. Jump Search
+
+Jump search works by taking fixed steps to jump ahead, then performs a linear search in the block.
+
+```cpp
+int jumpSearch(int arr[], int n, int target) {
+    // Finding block size to be jumped
+    int step = sqrt(n);
+
+    // Finding the block where element is present (if it is)
+    int prev = 0;
+    while (arr[min(step, n) - 1] < target) {
+        prev = step;
+        step += sqrt(n);
+        if (prev >= n)
+            return -1;
+    }
+
+    // Doing a linear search for target in block
+    while (arr[prev] < target) {
+        prev++;
+
+        // If we reached next block or end of array, element is not present
+        if (prev == min(step, n))
+            return -1;
+    }
+
+    // If element is found
+    if (arr[prev] == target)
+        return prev;
+
+    return -1;
+}
+```
+
+**Time Complexity**: O(√n)
+**Space Complexity**: O(1)
+
+**Use Cases**:
+- Sorted arrays when binary search may be overkill
+- Finding a middle ground between linear and binary search
+
+## 10. Practical Applications
+
+### Searching in a 2D Matrix
+
+Efficiently searches in a matrix where rows and columns are sorted.
+
+```cpp
+bool searchMatrix(vector<vector<int>>& matrix, int target) {
+    if (matrix.empty() || matrix[0].empty())
+        return false;
+
+    int rows = matrix.size();
+    int cols = matrix[0].size();
+
+    int row = 0;
+    int col = cols - 1;
+
+    // Start from top right corner
+    while (row < rows && col >= 0) {
+        if (matrix[row][col] == target)
+            return true;
+        else if (matrix[row][col] > target)
+            col--;  // Move left
+        else
+            row++;  // Move down
+    }
+
+    return false;
+}
+```
+
+**Time Complexity**: O(m + n) where m is rows and n is columns
+**Space Complexity**: O(1)
+
+### Find Peak Element
+
+Finds a peak element (element greater than its neighbors) in an array.
+
+```cpp
+int findPeakElement(vector<int>& nums) {
+    int left = 0;
+    int right = nums.size() - 1;
+
+    while (left < right) {
+        int mid = left + (right - left) / 2;
+
+        // If mid is greater than next element, peak is in left half
+        if (nums[mid] > nums[mid + 1])
+            right = mid;
+        // Otherwise, peak is in right half
+        else
+            left = mid + 1;
+    }
+
+    return left;
+}
+```
+
+**Time Complexity**: O(log n)
+**Space Complexity**: O(1)
+
+### Search in Rotated Sorted Array
+
+Finds an element in a sorted array that has been rotated.
+
+```cpp
+int searchRotated(vector<int>& nums, int target) {
+    int left = 0;
+    int right = nums.size() - 1;
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+
+        if (nums[mid] == target)
+            return mid;
+
+        // Check if left half is sorted
+        if (nums[left] <= nums[mid]) {
+            // Check if target is in left half
+            if (nums[left] <= target && target < nums[mid])
+                right = mid - 1;
+            else
+                left = mid + 1;
+        }
+        // Right half is sorted
+        else {
+            // Check if target is in right half
+            if (nums[mid] < target && target <= nums[right])
+                left = mid + 1;
+            else
+                right = mid - 1;
+        }
+    }
+
+    return -1;
+}
+```
+
+**Time Complexity**: O(log n)
+**Space Complexity**: O(1)
+
+## 11. Summary of Techniques
+
+| Algorithm | Time Complexity | Space Complexity | Best For |
+|-----------|----------------|-----------------|----------|
+| **Linear Search** | O(n) | O(1) | Small datasets, unsorted arrays |
+| **Binary Search** | O(log n) | O(1) or O(log n) | Sorted arrays, large datasets |
+| **Interpolation Search** | O(log log n) avg | O(1) | Uniformly distributed sorted arrays |
+| **Jump Search** | O(√n) | O(1) | Sorted arrays of medium size |
+| **Ternary Search** | O(log₃ n) | O(log₃ n) | Unimodal functions, optimization |
+| **DFS** | O(V + E) | O(V) | Path finding, cycle detection |
+| **BFS** | O(V + E) | O(V) | Shortest paths, connected components |
+| **Hashing** | O(1) avg | O(n) | Fast lookups, dictionaries |
+
+> This comprehensive guide covers the most important searching algorithms and techniques to tackle a wide range of problems efficiently!
