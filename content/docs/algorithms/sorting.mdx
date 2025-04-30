@@ -1,0 +1,539 @@
+---
+title: Sorting Algorithms
+description: Efficiently organize data with algorithms like Quick Sort, Merge Sort, and Heap Sort, explained step-by-step with C++ implementations and complexity analysis.
+---
+
+Sorting algorithms are fundamental techniques used to rearrange data in a specific order. Let's explore the most important sorting algorithms, their implementations, and when to use each one.
+
+## 1. Quick Sort
+
+Quick Sort is a divide-and-conquer algorithm that picks an element as a pivot and partitions the array around it.
+
+```cpp
+void quickSort(int arr[], int low, int high) {
+    if (low < high) {
+        // Partition the array and get the pivot position
+        int pivot = partition(arr, low, high);
+
+        // Recursively sort elements before and after pivot
+        quickSort(arr, low, pivot - 1);
+        quickSort(arr, pivot + 1, high);
+    }
+}
+
+int partition(int arr[], int low, int high) {
+    int pivot = arr[high];  // Choose the rightmost element as pivot
+    int i = low - 1;        // Index of smaller element
+
+    for (int j = low; j < high; j++) {
+        // If current element is smaller than the pivot
+        if (arr[j] < pivot) {
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+
+    // Place the pivot in its correct position
+    swap(arr[i + 1], arr[high]);
+    return i + 1;
+}
+```
+
+**Time Complexity:**
+- Best Case: O(n log n)
+- Average Case: O(n log n)
+- Worst Case: O(n²) - occurs when the pivot is always the smallest or largest element
+
+**Space Complexity:** O(log n) - for the recursive call stack
+
+**When to use:**
+- When average case performance matters more than worst-case
+- When space is a concern (in-place sorting)
+- For arrays with many duplicates (with proper implementation)
+
+## 2. Merge Sort
+
+Merge Sort divides the array into halves, sorts them recursively, and then merges the sorted halves.
+
+```cpp
+void mergeSort(int arr[], int left, int right) {
+    if (left < right) {
+        // Find the middle point
+        int mid = left + (right - left) / 2;
+
+        // Sort first and second halves
+        mergeSort(arr, left, mid);
+        mergeSort(arr, mid + 1, right);
+
+        // Merge the sorted halves
+        merge(arr, left, mid, right);
+    }
+}
+
+void merge(int arr[], int left, int mid, int right) {
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    // Create temporary arrays
+    int* L = new int[n1];
+    int* R = new int[n2];
+
+    // Copy data to temporary arrays
+    for (int i = 0; i < n1; i++)
+        L[i] = arr[left + i];
+    for (int j = 0; j < n2; j++)
+        R[j] = arr[mid + 1 + j];
+
+    // Merge the temporary arrays back into arr[left..right]
+    int i = 0, j = 0, k = left;
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) {
+            arr[k] = L[i];
+            i++;
+        } else {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    // Copy the remaining elements of L[], if any
+    while (i < n1) {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    // Copy the remaining elements of R[], if any
+    while (j < n2) {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+
+    delete[] L;
+    delete[] R;
+}
+```
+
+**Time Complexity:**
+- Best Case: O(n log n)
+- Average Case: O(n log n)
+- Worst Case: O(n log n)
+
+**Space Complexity:** O(n) - for the temporary arrays during merging
+
+**When to use:**
+- When stable sorting is required (preserves the relative order of equal elements)
+- When worst-case performance is important
+- For linked lists (can be implemented with O(1) extra space)
+- For external sorting (when data doesn't fit in memory)
+
+## 3. Heap Sort
+
+Heap Sort uses a binary heap data structure to sort elements.
+
+```cpp
+void heapSort(int arr[], int n) {
+    // Build a max heap
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i);
+
+    // Extract elements from heap one by one
+    for (int i = n - 1; i > 0; i--) {
+        // Move current root to end
+        swap(arr[0], arr[i]);
+
+        // Call max heapify on the reduced heap
+        heapify(arr, i, 0);
+    }
+}
+
+void heapify(int arr[], int n, int i) {
+    int largest = i;      // Initialize largest as root
+    int left = 2 * i + 1; // Left child
+    int right = 2 * i + 2; // Right child
+
+    // If left child is larger than root
+    if (left < n && arr[left] > arr[largest])
+        largest = left;
+
+    // If right child is larger than largest so far
+    if (right < n && arr[right] > arr[largest])
+        largest = right;
+
+    // If largest is not root
+    if (largest != i) {
+        swap(arr[i], arr[largest]);
+
+        // Recursively heapify the affected sub-tree
+        heapify(arr, n, largest);
+    }
+}
+```
+
+**Time Complexity:**
+- Best Case: O(n log n)
+- Average Case: O(n log n)
+- Worst Case: O(n log n)
+
+**Space Complexity:** O(1) - in-place sorting
+
+**When to use:**
+- When space is a concern (in-place sorting)
+- When consistent performance is needed (same time complexity for all cases)
+- When you need to find the k largest/smallest elements (can stop after k iterations)
+
+## 4. Insertion Sort
+
+Insertion Sort builds the sorted array one item at a time.
+
+```cpp
+void insertionSort(int arr[], int n) {
+    for (int i = 1; i < n; i++) {
+        int key = arr[i];
+        int j = i - 1;
+
+        // Move elements greater than key to one position ahead
+        while (j >= 0 && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j--;
+        }
+        arr[j + 1] = key;
+    }
+}
+```
+
+**Time Complexity:**
+- Best Case: O(n) - when array is already sorted
+- Average Case: O(n²)
+- Worst Case: O(n²) - when array is reverse sorted
+
+**Space Complexity:** O(1) - in-place sorting
+
+**When to use:**
+- For small datasets (typically n < 20)
+- When array is nearly sorted
+- When memory usage is a concern
+- As part of more complex algorithms (like Timsort)
+
+## 5. Selection Sort
+
+Selection Sort repeatedly finds the minimum element from the unsorted part and puts it at the beginning.
+
+```cpp
+void selectionSort(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        // Find the minimum element in unsorted array
+        int min_idx = i;
+        for (int j = i + 1; j < n; j++) {
+            if (arr[j] < arr[min_idx])
+                min_idx = j;
+        }
+
+        // Swap the found minimum element with the first element
+        swap(arr[min_idx], arr[i]);
+    }
+}
+```
+
+**Time Complexity:**
+- Best Case: O(n²)
+- Average Case: O(n²)
+- Worst Case: O(n²)
+
+**Space Complexity:** O(1) - in-place sorting
+
+**When to use:**
+- When memory usage is a concern
+- When simplicity is more important than efficiency
+- In situations where the cost of swapping elements is high (makes minimum number of swaps: O(n))
+
+## 6. Bubble Sort
+
+Bubble Sort repeatedly steps through the list and compares adjacent elements, swapping them if they are in the wrong order.
+
+```cpp
+void bubbleSort(int arr[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        bool swapped = false;
+
+        // Last i elements are already in place
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                swap(arr[j], arr[j + 1]);
+                swapped = true;
+            }
+        }
+
+        // If no swapping occurred in this pass, array is sorted
+        if (!swapped)
+            break;
+    }
+}
+```
+
+**Time Complexity:**
+- Best Case: O(n) - when array is already sorted
+- Average Case: O(n²)
+- Worst Case: O(n²) - when array is reverse sorted
+
+**Space Complexity:** O(1) - in-place sorting
+
+**When to use:**
+- For educational purposes
+- When simplicity is more important than efficiency
+- When the array is nearly sorted (optimized version with swapped flag)
+
+## 7. Counting Sort
+
+Counting Sort is a non-comparison based sorting algorithm that works well when the range of input values is not significantly greater than the number of elements.
+
+```cpp
+void countingSort(int arr[], int n, int range) {
+    int* output = new int[n];
+    int* count = new int[range + 1];
+
+    // Initialize count array with zeros
+    memset(count, 0, sizeof(int) * (range + 1));
+
+    // Store count of each element
+    for (int i = 0; i < n; i++)
+        count[arr[i]]++;
+
+    // Change count[i] to contain actual position of this element in output
+    for (int i = 1; i <= range; i++)
+        count[i] += count[i - 1];
+
+    // Build the output array
+    for (int i = n - 1; i >= 0; i--) {
+        output[count[arr[i]] - 1] = arr[i];
+        count[arr[i]]--;
+    }
+
+    // Copy the output array to arr
+    for (int i = 0; i < n; i++)
+        arr[i] = output[i];
+
+    delete[] output;
+    delete[] count;
+}
+```
+
+**Time Complexity:** O(n + k) where k is the range of input values
+**Space Complexity:** O(n + k)
+
+**When to use:**
+- When range of input values is not significantly greater than the number of elements
+- When stability is important (preserves relative order of equal elements)
+- For integer or data that can be mapped to integers with a small range
+
+## 8. Radix Sort
+
+Radix Sort is a non-comparison based sorting algorithm that sorts data based on individual digits or groups of digits.
+
+```cpp
+// A function to get the maximum value in arr[]
+int getMax(int arr[], int n) {
+    int max = arr[0];
+    for (int i = 1; i < n; i++)
+        if (arr[i] > max)
+            max = arr[i];
+    return max;
+}
+
+// A function to do counting sort of arr[] according to
+// the digit represented by exp
+void countSort(int arr[], int n, int exp) {
+    int* output = new int[n];
+    int count[10] = {0};
+
+    // Store count of occurrences in count[]
+    for (int i = 0; i < n; i++)
+        count[(arr[i] / exp) % 10]++;
+
+    // Change count[i] so that count[i] now contains
+    // actual position of this digit in output[]
+    for (int i = 1; i < 10; i++)
+        count[i] += count[i - 1];
+
+    // Build the output array
+    for (int i = n - 1; i >= 0; i--) {
+        output[count[(arr[i] / exp) % 10] - 1] = arr[i];
+        count[(arr[i] / exp) % 10]--;
+    }
+
+    // Copy the output array to arr[]
+    for (int i = 0; i < n; i++)
+        arr[i] = output[i];
+
+    delete[] output;
+}
+
+// The main function to that sorts arr[] of size n using Radix Sort
+void radixSort(int arr[], int n) {
+    // Find the maximum number to know number of digits
+    int m = getMax(arr, n);
+
+    // Do counting sort for every digit
+    for (int exp = 1; m / exp > 0; exp *= 10)
+        countSort(arr, n, exp);
+}
+```
+
+**Time Complexity:** O(d * (n + k)) where d is the number of digits and k is the range of digits (usually 10)
+**Space Complexity:** O(n + k)
+
+**When to use:**
+- When elements are within a reasonable range
+- For integer or string data
+- When stability is important
+- When the keys have fixed length (like words, fixed length integers)
+
+## 9. Bucket Sort
+
+Bucket Sort distributes elements into a number of buckets, which are then sorted individually.
+
+```cpp
+void bucketSort(float arr[], int n) {
+    // Create n empty buckets
+    vector<float>* buckets = new vector<float>[n];
+
+    // Put array elements in different buckets
+    for (int i = 0; i < n; i++) {
+        int bucketIndex = n * arr[i]; // Assuming arr[i] is in range [0, 1)
+        buckets[bucketIndex].push_back(arr[i]);
+    }
+
+    // Sort individual buckets
+    for (int i = 0; i < n; i++)
+        sort(buckets[i].begin(), buckets[i].end());
+
+    // Concatenate all buckets into arr[]
+    int index = 0;
+    for (int i = 0; i < n; i++) {
+        for (size_t j = 0; j < buckets[i].size(); j++) {
+            arr[index++] = buckets[i][j];
+        }
+    }
+
+    delete[] buckets;
+}
+```
+
+**Time Complexity:**
+- Average Case: O(n + k) where k is the number of buckets
+- Worst Case: O(n²) when all elements fall into a single bucket
+
+**Space Complexity:** O(n + k)
+
+**When to use:**
+- When input is uniformly distributed over a range
+- For floating-point numbers in range [0.0, 1.0)
+- When data distribution is known
+
+## 10. Timsort
+
+Timsort is a hybrid sorting algorithm derived from merge sort and insertion sort. It's the default sorting algorithm in Python, Java, and many other languages.
+
+```cpp
+// Insertion sort for small portions
+void insertionSort(int arr[], int left, int right) {
+    for (int i = left + 1; i <= right; i++) {
+        int temp = arr[i];
+        int j = i - 1;
+        while (j >= left && arr[j] > temp) {
+            arr[j + 1] = arr[j];
+            j--;
+        }
+        arr[j + 1] = temp;
+    }
+}
+
+// Merge function like in merge sort
+void merge(int arr[], int l, int m, int r) {
+    // Same as the merge function shown in Merge Sort section
+    // ...
+}
+
+// The main Timsort function
+void timSort(int arr[], int n) {
+    const int RUN = 32;  // Size of a "run" - typically between 32 and 64
+
+    // Sort individual subarrays of size RUN
+    for (int i = 0; i < n; i += RUN)
+        insertionSort(arr, i, min((i + RUN - 1), (n - 1)));
+
+    // Start merging from size RUN
+    for (int size = RUN; size < n; size = 2 * size) {
+        for (int left = 0; left < n; left += 2 * size) {
+            int mid = left + size - 1;
+            int right = min((left + 2 * size - 1), (n - 1));
+
+            if (mid < right)
+                merge(arr, left, mid, right);
+        }
+    }
+}
+```
+
+**Time Complexity:**
+- Best Case: O(n) when array is already sorted
+- Average Case: O(n log n)
+- Worst Case: O(n log n)
+
+**Space Complexity:** O(n)
+
+**When to use:**
+- As a general-purpose sorting algorithm
+- When stability is important
+- When data may have some pre-existing order
+- For real-world data with various patterns
+
+## 11. Comparison of Sorting Algorithms
+
+| Algorithm      | Best       | Average    | Worst      | Space      | Stable | In-Place |
+|----------------|------------|------------|------------|------------|--------|----------|
+| Quick Sort     | O(n log n) | O(n log n) | O(n²)      | O(log n)   | No     | Yes      |
+| Merge Sort     | O(n log n) | O(n log n) | O(n log n) | O(n)       | Yes    | No       |
+| Heap Sort      | O(n log n) | O(n log n) | O(n log n) | O(1)       | No     | Yes      |
+| Insertion Sort | O(n)       | O(n²)      | O(n²)      | O(1)       | Yes    | Yes      |
+| Selection Sort | O(n²)      | O(n²)      | O(n²)      | O(1)       | No     | Yes      |
+| Bubble Sort    | O(n)       | O(n²)      | O(n²)      | O(1)       | Yes    | Yes      |
+| Counting Sort  | O(n + k)   | O(n + k)   | O(n + k)   | O(n + k)   | Yes    | No       |
+| Radix Sort     | O(n * k)   | O(n * k)   | O(n * k)   | O(n + k)   | Yes    | No       |
+| Bucket Sort    | O(n + k)   | O(n + k)   | O(n²)      | O(n + k)   | Yes    | No       |
+| Timsort        | O(n)       | O(n log n) | O(n log n) | O(n)       | Yes    | No       |
+
+## 12. When to Choose Which Algorithm
+
+Here's a guide for choosing the right sorting algorithm based on your requirements:
+
+- **For general-purpose sorting:**
+  - **Timsort** or **Quick Sort** are excellent defaults
+
+- **When memory is limited:**
+  - **Heap Sort** (in-place with O(1) extra space)
+  - **Quick Sort** (in-place with O(log n) call stack)
+
+- **For nearly sorted data:**
+  - **Insertion Sort** (fastest for small or nearly sorted arrays)
+  - **Timsort** (optimized for partially sorted data)
+
+- **When stability is required (preserve order of equal elements):**
+  - **Merge Sort**
+  - **Insertion Sort**
+  - **Bubble Sort**
+  - **Counting Sort** (with proper implementation)
+
+- **For small arrays (n < 20):**
+  - **Insertion Sort**
+
+- **For integer data with limited range:**
+  - **Counting Sort** (when range is not much larger than n)
+  - **Radix Sort** (for larger ranges)
+
+- **For floating point data in range [0,1):**
+  - **Bucket Sort**
+
+Understanding these algorithms and their characteristics helps you make the right choice for specific data patterns and requirements, leading to more efficient and effective code!

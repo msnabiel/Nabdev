@@ -1,0 +1,536 @@
+---
+title: Greedy Algorithms
+description: Discover strategies that build optimal solutions by making locally optimal choices at each step, with real-world applications and implementation examples.
+---
+
+Greedy algorithms build solutions by making the best choice at each step without reconsidering previous choices. Unlike dynamic programming, greedy algorithms never look back. Let's explore this powerful technique through examples, patterns, and applications.
+
+## 1. Core Concepts
+
+Greedy algorithms follow a simple strategy:
+
+1. **Make the locally optimal choice**: At each step, make the choice that looks best at the moment
+2. **Hope for the best**: Trust that these local choices will lead to a globally optimal solution
+
+For a problem to be solvable with a greedy approach, it must have:
+
+- **Greedy choice property**: A globally optimal solution can be built by making locally optimal choices
+- **Optimal substructure**: The optimal solution contains optimal solutions to subproblems
+
+## 2. Classic Examples
+
+### Coin Change (Denominations with Canonical Coin Systems)
+
+Find the minimum number of coins needed to make a given amount.
+
+```cpp
+int coinChangeGreedy(vector<int>& coins, int amount) {
+    // Sort coins in descending order
+    sort(coins.begin(), coins.end(), greater<int>());
+
+    int coinCount = 0;
+    int remaining = amount;
+
+    for (int coin : coins) {
+        // Take as many of the current coin as possible
+        coinCount += remaining / coin;
+        remaining %= coin;
+
+        if (remaining == 0) break;
+    }
+
+    return remaining == 0 ? coinCount : -1; // If remaining > 0, no solution exists
+}
+```
+
+**Note**: This greedy approach works only for canonical coin systems (like US coins: 1, 5, 10, 25). For arbitrary coin denominations, dynamic programming is required for the optimal solution.
+
+### Fractional Knapsack
+
+Maximize the value of items in a knapsack where items can be taken in fractions.
+
+```cpp
+double fractionalKnapsack(vector<int>& weights, vector<int>& values, int capacity) {
+    int n = weights.size();
+    vector<pair<double, int>> valuePerWeight(n);
+
+    // Calculate value per unit weight for each item
+    for (int i = 0; i < n; i++) {
+        valuePerWeight[i] = {(double)values[i] / weights[i], i};
+    }
+
+    // Sort items by value per unit weight in descending order
+    sort(valuePerWeight.begin(), valuePerWeight.end(), greater<pair<double, int>>());
+
+    double totalValue = 0.0;
+    int remainingCapacity = capacity;
+
+    for (int i = 0; i < n; i++) {
+        int idx = valuePerWeight[i].second;
+
+        if (weights[idx] <= remainingCapacity) {
+            // Take the whole item
+            totalValue += values[idx];
+            remainingCapacity -= weights[idx];
+        } else {
+            // Take a fraction of the item
+            totalValue += values[idx] * ((double)remainingCapacity / weights[idx]);
+            break;
+        }
+    }
+
+    return totalValue;
+}
+```
+
+## 3. Graph Algorithms
+
+### Minimum Spanning Tree (Prim's Algorithm)
+
+Find a subset of edges that forms a tree including every vertex with minimum total edge weight.
+
+```cpp
+vector<pair<int, int>> primMST(vector<vector<pair<int, int>>>& graph, int vertices) {
+    // Min-heap to store edges (weight, vertex)
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+
+    // Start from vertex 0
+    int startVertex = 0;
+
+    // Track visited vertices
+    vector<bool> visited(vertices, false);
+
+    // Store MST edges
+    vector<pair<int, int>> mstEdges;
+
+    // Start with vertex 0
+    pq.push({0, startVertex});
+
+    while (!pq.empty()) {
+        // Get the edge with minimum weight
+        int weight = pq.top().first;
+        int vertex = pq.top().second;
+        pq.pop();
+
+        if (visited[vertex]) continue;
+
+        // Mark current vertex as visited
+        visited[vertex] = true;
+
+        // Add the edge to MST (except for the starting vertex)
+        if (vertex != startVertex) {
+            mstEdges.push_back({weight, vertex});
+        }
+
+        // Add all adjacent edges to the priority queue
+        for (auto& neighbor : graph[vertex]) {
+            int adjVertex = neighbor.first;
+            int edgeWeight = neighbor.second;
+
+            if (!visited[adjVertex]) {
+                pq.push({edgeWeight, adjVertex});
+            }
+        }
+    }
+
+    return mstEdges;
+}
+```
+
+### Shortest Path (Dijkstra's Algorithm)
+
+Find the shortest path from a source vertex to all other vertices in a weighted graph.
+
+```cpp
+vector<int> dijkstra(vector<vector<pair<int, int>>>& graph, int vertices, int source) {
+    // Priority queue to store vertices that need to be processed
+    // pair: (distance, vertex)
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+
+    // Vector to store distances
+    vector<int> distances(vertices, INT_MAX);
+
+    // Distance to source is 0
+    distances[source] = 0;
+    pq.push({0, source});
+
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        pq.pop();
+
+        // Visit all neighbors of u
+        for (auto& neighbor : graph[u]) {
+            int v = neighbor.first;
+            int weight = neighbor.second;
+
+            // Relaxation step
+            if (distances[u] != INT_MAX && distances[u] + weight < distances[v]) {
+                distances[v] = distances[u] + weight;
+                pq.push({distances[v], v});
+            }
+        }
+    }
+
+    return distances;
+}
+```
+
+## 4. Scheduling Problems
+
+### Activity Selection
+
+Select the maximum number of non-overlapping activities.
+
+```cpp
+int maxActivities(vector<int>& start, vector<int>& finish) {
+    int n = start.size();
+
+    // Create a vector of pairs (finish time, start time)
+    vector<pair<int, int>> activities(n);
+    for (int i = 0; i < n; i++) {
+        activities[i] = {finish[i], start[i]};
+    }
+
+    // Sort activities by finish time
+    sort(activities.begin(), activities.end());
+
+    int count = 1;  // First activity is always selected
+    int lastFinish = activities[0].first;
+
+    for (int i = 1; i < n; i++) {
+        // If this activity starts after the last selected activity finishes
+        if (activities[i].second >= lastFinish) {
+            count++;
+            lastFinish = activities[i].first;
+        }
+    }
+
+    return count;
+}
+```
+
+### Job Sequencing with Deadlines
+
+Maximize profit by selecting jobs that can be completed before their deadlines.
+
+```cpp
+struct Job {
+    int id;
+    int deadline;
+    int profit;
+};
+
+int jobSequencing(vector<Job>& jobs) {
+    int n = jobs.size();
+
+    // Sort jobs by profit in descending order
+    sort(jobs.begin(), jobs.end(), [](Job a, Job b) {
+        return a.profit > b.profit;
+    });
+
+    // Find the maximum deadline
+    int maxDeadline = 0;
+    for (auto& job : jobs) {
+        maxDeadline = max(maxDeadline, job.deadline);
+    }
+
+    // Initialize the time slots
+    vector<bool> timeSlot(maxDeadline + 1, false);
+
+    int totalProfit = 0;
+
+    // Process jobs one by one
+    for (int i = 0; i < n; i++) {
+        // Find the latest available time slot before the deadline
+        for (int j = jobs[i].deadline; j > 0; j--) {
+            if (!timeSlot[j]) {
+                timeSlot[j] = true;
+                totalProfit += jobs[i].profit;
+                break;
+            }
+        }
+    }
+
+    return totalProfit;
+}
+```
+
+## 5. Interval Problems
+
+### Minimum Number of Intervals to Cover a Range
+
+Find the minimum number of intervals needed to cover a given range.
+
+```cpp
+int minIntervalsToRangeEnd(vector<pair<int, int>>& intervals, int start, int end) {
+    sort(intervals.begin(), intervals.end());
+
+    int count = 0;
+    int currentEnd = start;
+    int i = 0;
+    int n = intervals.size();
+
+    while (currentEnd < end && i < n) {
+        // Find the interval that extends furthest to the right
+        // while still overlapping with our current coverage
+        int maxReach = currentEnd;
+        while (i < n && intervals[i].first <= currentEnd) {
+            maxReach = max(maxReach, intervals[i].second);
+            i++;
+        }
+
+        // If we couldn't extend further, it's impossible to cover the range
+        if (maxReach == currentEnd) return -1;
+
+        currentEnd = maxReach;
+        count++;
+    }
+
+    return currentEnd >= end ? count : -1;
+}
+```
+
+### Merge Overlapping Intervals
+
+Merge all overlapping intervals in a list.
+
+```cpp
+vector<pair<int, int>> mergeIntervals(vector<pair<int, int>>& intervals) {
+    if (intervals.empty()) return {};
+
+    // Sort intervals based on start time
+    sort(intervals.begin(), intervals.end());
+
+    vector<pair<int, int>> result;
+    result.push_back(intervals[0]);
+
+    for (int i = 1; i < intervals.size(); i++) {
+        // If current interval overlaps with the last merged interval
+        if (intervals[i].first <= result.back().second) {
+            // Update the end of the last interval if needed
+            result.back().second = max(result.back().second, intervals[i].second);
+        } else {
+            // Add the current interval to the result
+            result.push_back(intervals[i]);
+        }
+    }
+
+    return result;
+}
+```
+
+## 6. Data Compression
+
+### Huffman Coding
+
+A lossless data compression algorithm that assigns variable-length codes to characters based on their frequencies.
+
+```cpp
+struct Node {
+    char data;
+    int freq;
+    Node* left;
+    Node* right;
+
+    Node(char data, int freq) : data(data), freq(freq), left(nullptr), right(nullptr) {}
+};
+
+struct Compare {
+    bool operator()(Node* a, Node* b) {
+        return a->freq > b->freq;
+    }
+};
+
+void printCodes(Node* root, string code, map<char, string>& huffmanCode) {
+    if (!root) return;
+
+    // If this is a leaf node
+    if (!root->left && !root->right) {
+        huffmanCode[root->data] = code;
+    }
+
+    printCodes(root->left, code + "0", huffmanCode);
+    printCodes(root->right, code + "1", huffmanCode);
+}
+
+map<char, string> huffmanCoding(string text) {
+    // Count frequency of each character
+    map<char, int> freq;
+    for (char c : text) {
+        freq[c]++;
+    }
+
+    // Create a min heap
+    priority_queue<Node*, vector<Node*>, Compare> minHeap;
+
+    // Create a leaf node for each character and add it to minHeap
+    for (auto pair : freq) {
+        minHeap.push(new Node(pair.first, pair.second));
+    }
+
+    // Build Huffman Tree
+    while (minHeap.size() > 1) {
+        // Extract two nodes with lowest frequency
+        Node* left = minHeap.top(); minHeap.pop();
+        Node* right = minHeap.top(); minHeap.pop();
+
+        // Create a new internal node with these two as children
+        // and with frequency equal to the sum of their frequencies
+        Node* internal = new Node('$', left->freq + right->freq);
+        internal->left = left;
+        internal->right = right;
+
+        minHeap.push(internal);
+    }
+
+    // The remaining node is the root of Huffman Tree
+    Node* root = minHeap.top();
+
+    // Generate Huffman codes
+    map<char, string> huffmanCode;
+    printCodes(root, "", huffmanCode);
+
+    return huffmanCode;
+}
+```
+
+## 7. Real-World Applications
+
+### Network Routing
+Greedy algorithms like Dijkstra's are used in routers to find the shortest path for data packets.
+
+### Task Scheduling in Operating Systems
+Scheduling algorithms like Shortest Job First (SJF) use greedy approaches to optimize CPU utilization.
+
+```cpp
+vector<int> shortestJobFirst(vector<int>& burstTime) {
+    int n = burstTime.size();
+    vector<pair<int, int>> jobs;
+
+    // Store job index and burst time
+    for (int i = 0; i < n; i++) {
+        jobs.push_back({burstTime[i], i});
+    }
+
+    // Sort jobs by burst time
+    sort(jobs.begin(), jobs.end());
+
+    // Create execution order
+    vector<int> executionOrder;
+    for (auto& job : jobs) {
+        executionOrder.push_back(job.second);
+    }
+
+    return executionOrder;
+}
+```
+
+### Resource Allocation
+Used in systems where resources need to be allocated efficiently to maximize utility.
+
+### Compression and Encoding
+Huffman coding uses a greedy approach to assign shorter codes to more frequent characters.
+
+## 8. Advanced Techniques
+
+### Greedy with Data Structures
+
+Many greedy algorithms rely on efficient data structures:
+
+- **Priority Queues** for always accessing the minimum/maximum element
+- **Disjoint Set (Union-Find)** for Kruskal's MST algorithm
+- **Balanced Binary Search Trees** for interval problems
+
+### Matroid Theory
+
+A mathematical framework that helps identify when a greedy algorithm will yield optimal results.
+
+### Making Greedy Choices with Proof
+
+For a greedy algorithm to work correctly, we need to prove:
+
+1. The greedy choice is always part of some optimal solution (greedy choice property)
+2. After making the greedy choice, the remaining subproblem has the same form (optimal substructure)
+
+## 9. When Greedy Works and When It Fails
+
+### Success Cases
+- **Activity Selection**: Sort by finish time and select activities greedily
+- **Huffman Coding**: Build tree bottom-up from least frequent symbols
+- **Minimum Spanning Tree**: Both Prim's and Kruskal's greedy algorithms work
+- **Fractional Knapsack**: Take items with highest value/weight ratio first
+
+### Failure Cases
+- **0/1 Knapsack**: Cannot take fractional items, requires dynamic programming
+- **Traveling Salesman Problem**: Local decisions don't lead to global optimum
+- **General Coin Change**: With arbitrary denominations, greedy may not work
+
+## 10. Problem-Solving Framework
+
+When approaching a problem with a greedy strategy:
+
+1. **Identify the greedy choice**
+   - What's the locally optimal choice at each step?
+
+2. **Prove the greedy choice property**
+   - Is this choice always part of some optimal solution?
+
+3. **Prove optimal substructure**
+   - Does making this choice leave a similar subproblem?
+
+4. **Design the algorithm**
+   - Implement the greedy choice strategy efficiently
+
+5. **Analyze complexity**
+   - Time and space complexity analysis
+
+## 11. Practice Problems by Difficulty
+
+### Beginner
+1. Coin Change (with canonical coin systems)
+2. Activity Selection
+3. Fractional Knapsack
+
+### Intermediate
+1. Huffman Coding
+2. Minimum Spanning Tree (Prim's/Kruskal's)
+3. Job Sequencing with Deadlines
+
+### Advanced
+1. Set Cover Problem
+2. Load Balancing
+3. K Centers Problem
+
+## 12. Comparison with Other Techniques
+
+| Technique | When to Use | Time Complexity | Space Complexity |
+|-----------|-------------|-----------------|------------------|
+| **Greedy** | When locally optimal choices lead to global optimum | Usually O(n log n) or better | Usually O(1) or O(n) |
+| **Dynamic Programming** | When optimal substructure exists but greedy fails | Usually O(n²) or O(n * state) | Usually O(n) or O(state) |
+| **Divide & Conquer** | When problem can be broken into independent subproblems | Usually O(n log n) | Usually O(log n) to O(n) |
+| **Backtracking** | When exploring all possibilities is required | Usually exponential | Usually O(n) |
+
+## 13. Summary and Best Practices
+
+### When to consider a greedy approach:
+- Problem has optimal substructure
+- Locally optimal choices lead to globally optimal solution
+- Decisions are irreversible (no backtracking needed)
+
+### Implementation tips:
+- Sort or use priority queues for efficient selection
+- Carefully design the greedy choice criteria
+- Prove correctness before implementing
+- Test against edge cases
+
+### Advantages:
+- Simple to implement
+- Usually efficient in time and space
+- Often intuitive
+
+### Limitations:
+- Doesn't work for all problems
+- May require proof of correctness
+- Can be hard to determine if a greedy approach works
+
+Greedy algorithms offer an elegant and efficient approach to many optimization problems, but require careful analysis to ensure they produce optimal solutions. By understanding the principles and patterns of greedy algorithms, you'll be better equipped to recognize when to apply them and how to implement them effectively.
