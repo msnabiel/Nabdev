@@ -1,0 +1,773 @@
+---
+title: Recursion
+description: Master the art of solving problems by breaking them into smaller, identical subproblems using recursion with comprehensive examples, optimization techniques, and common patterns.
+---
+
+Recursion is a powerful technique where a function calls itself to solve a problem by breaking it down into smaller, identical subproblems. This approach enables elegant and intuitive solutions to many complex programming challenges.
+
+## 1. Fundamentals of Recursion
+
+Every recursive solution consists of two essential components:
+
+1. **Base case(s)**: The condition(s) that terminate recursion
+2. **Recursive case(s)**: The step(s) where the function calls itself with a smaller problem
+
+```cpp
+// General template for a recursive function
+ReturnType recursiveFunction(Parameters params) {
+    // Base case(s)
+    if (baseCondition) {
+        return baseValue;
+    }
+
+    // Recursive case(s)
+    // Process current state
+    // Make recursive call(s) with smaller subproblem(s)
+    return recursiveFunction(smallerProblem);
+}
+```
+
+## 2. Simple Recursive Functions
+
+### Factorial
+
+Calculates n! (the product of all positive integers less than or equal to n).
+
+```cpp
+int factorial(int n) {
+    // Base case: factorial of 0 or 1 is 1
+    if (n <= 1) {
+        return 1;
+    }
+
+    // Recursive case: n! = n * (n-1)!
+    return n * factorial(n - 1);
+}
+```
+
+**Explanation:**
+- **Base case**: When n is 0 or 1, return 1 (as 0! = 1! = 1)
+- **Recursive case**: For n > 1, return n multiplied by factorial of (n-1)
+- **Example trace** for factorial(4):
+  - factorial(4) = 4 * factorial(3)
+  - factorial(3) = 3 * factorial(2)
+  - factorial(2) = 2 * factorial(1)
+  - factorial(1) = 1 (base case reached)
+  - Unwinding: 2 * 1 = 2, 3 * 2 = 6, 4 * 6 = 24
+- Time complexity: O(n)
+- Space complexity: O(n) due to call stack
+
+### Fibonacci Sequence
+
+Computes the nth Fibonacci number (where each number is the sum of the two preceding ones).
+
+```cpp
+int fibonacci(int n) {
+    // Base cases: fib(0) = 0, fib(1) = 1
+    if (n <= 0) return 0;
+    if (n == 1) return 1;
+
+    // Recursive case: fib(n) = fib(n-1) + fib(n-2)
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+```
+
+**Explanation:**
+- **Base cases**: n = 0 returns 0, n = 1 returns 1
+- **Recursive case**: For n > 1, return the sum of fibonacci(n-1) and fibonacci(n-2)
+- Time complexity: O(2^n) - exponential due to redundant calculations
+- Space complexity: O(n) for the call stack
+
+## 3. Recursive vs. Iterative Approaches
+
+### Power Function
+
+Calculates x^n using both recursive and iterative methods.
+
+**Recursive Implementation:**
+```cpp
+double power(double x, int n) {
+    // Base case
+    if (n == 0) return 1;
+
+    // Handle negative exponents
+    if (n < 0) {
+        return 1.0 / power(x, -n);
+    }
+
+    // Recursive case with optimization for even powers
+    if (n % 2 == 0) {
+        // x^n = (x^(n/2))^2
+        double half = power(x, n / 2);
+        return half * half;
+    } else {
+        // x^n = x * x^(n-1)
+        return x * power(x, n - 1);
+    }
+}
+```
+
+**Iterative Implementation:**
+```cpp
+double powerIterative(double x, int n) {
+    // Handle negative exponents
+    if (n < 0) {
+        x = 1.0 / x;
+        n = -n;
+    }
+
+    double result = 1;
+    while (n > 0) {
+        // If n is odd, multiply result by x
+        if (n % 2 == 1) {
+            result *= x;
+        }
+        // Square x for next iteration
+        x *= x;
+        // Integer division by 2
+        n /= 2;
+    }
+
+    return result;
+}
+```
+
+**Comparison:**
+- **Recursive**: Cleaner, more intuitive code but with call stack overhead
+- **Iterative**: More efficient in terms of space complexity, avoids stack overflow
+- Both implementations have O(log n) time complexity due to the binary exponentiation approach
+
+## 4. Divide and Conquer Recursion
+
+### Binary Search
+
+Searches for a target value in a sorted array by repeatedly dividing the search space in half.
+
+```cpp
+int binarySearch(vector<int>& nums, int target, int left, int right) {
+    // Base case: element not found
+    if (left > right) {
+        return -1;
+    }
+
+    // Calculate middle index
+    int mid = left + (right - left) / 2;
+
+    // Base case: element found
+    if (nums[mid] == target) {
+        return mid;
+    }
+
+    // Recursive cases:
+    if (nums[mid] > target) {
+        // Search in the left half
+        return binarySearch(nums, target, left, mid - 1);
+    } else {
+        // Search in the right half
+        return binarySearch(nums, target, mid + 1, right);
+    }
+}
+
+int search(vector<int>& nums, int target) {
+    return binarySearch(nums, target, 0, nums.size() - 1);
+}
+```
+
+**Explanation:**
+- **Base cases**: When the element is found or when the search space is empty
+- **Recursive case**: Divide the array in half and search in the appropriate half
+- Time complexity: O(log n)
+- Space complexity: O(log n) due to the call stack
+
+### Merge Sort
+
+Sorts an array by recursively dividing it into halves, sorting them, and then merging the sorted halves.
+
+```cpp
+// Merge two sorted subarrays
+void merge(vector<int>& nums, int left, int mid, int right) {
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    // Create temporary arrays
+    vector<int> L(n1), R(n2);
+
+    // Copy data to temporary arrays
+    for (int i = 0; i < n1; i++) {
+        L[i] = nums[left + i];
+    }
+    for (int j = 0; j < n2; j++) {
+        R[j] = nums[mid + 1 + j];
+    }
+
+    // Merge the temporary arrays back into nums
+    int i = 0, j = 0, k = left;
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) {
+            nums[k] = L[i];
+            i++;
+        } else {
+            nums[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    // Copy remaining elements of L[]
+    while (i < n1) {
+        nums[k] = L[i];
+        i++;
+        k++;
+    }
+
+    // Copy remaining elements of R[]
+    while (j < n2) {
+        nums[k] = R[j];
+        j++;
+        k++;
+    }
+}
+
+// Recursive mergesort function
+void mergeSort(vector<int>& nums, int left, int right) {
+    // Base case: single element or invalid range
+    if (left >= right) {
+        return;
+    }
+
+    // Calculate middle point
+    int mid = left + (right - left) / 2;
+
+    // Recursively sort the two halves
+    mergeSort(nums, left, mid);
+    mergeSort(nums, mid + 1, right);
+
+    // Merge the sorted halves
+    merge(nums, left, mid, right);
+}
+```
+
+**Explanation:**
+- **Base case**: A subarray with one element is already sorted
+- **Recursive case**: Divide the array in half, sort each half, then merge
+- The merge function combines two sorted subarrays into a single sorted array
+- Time complexity: O(n log n)
+- Space complexity: O(n) for the temporary arrays + O(log n) for the call stack
+
+### Quick Sort
+
+Sorts an array by selecting a pivot element and partitioning the array around the pivot.
+
+```cpp
+// Partition function selects a pivot and places all smaller elements before it
+int partition(vector<int>& nums, int low, int high) {
+    int pivot = nums[high];  // Choose the rightmost element as pivot
+    int i = low - 1;         // Index of smaller element
+
+    for (int j = low; j < high; j++) {
+        // If current element is smaller than the pivot
+        if (nums[j] <= pivot) {
+            i++;  // Increment index of smaller element
+            swap(nums[i], nums[j]);
+        }
+    }
+    swap(nums[i + 1], nums[high]);
+    return i + 1;
+}
+
+// Recursive quicksort function
+void quickSort(vector<int>& nums, int low, int high) {
+    // Base case: array of size 0 or 1
+    if (low >= high) {
+        return;
+    }
+
+    // Partition the array and get the pivot index
+    int pivotIndex = partition(nums, low, high);
+
+    // Recursively sort elements before and after the pivot
+    quickSort(nums, low, pivotIndex - 1);
+    quickSort(nums, pivotIndex + 1, high);
+}
+```
+
+**Explanation:**
+- **Base case**: A subarray with zero or one elements is already sorted
+- **Recursive case**: Partition the array and recursively sort the subarrays
+- The partition function selects a pivot and rearranges the array so that elements less than the pivot are before it and elements greater than the pivot are after it
+- Time complexity: O(n log n) average case, O(n²) worst case
+- Space complexity: O(log n) average case for the call stack, O(n) worst case
+
+## 5. Advanced Recursive Patterns
+
+### Tree Traversals
+
+Three common ways to traverse a binary tree recursively:
+
+```cpp
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
+
+// Preorder traversal: Root -> Left -> Right
+void preorder(TreeNode* root) {
+    // Base case: empty tree
+    if (!root) return;
+
+    // Process current node
+    cout << root->val << " ";
+
+    // Recursively traverse left subtree
+    preorder(root->left);
+
+    // Recursively traverse right subtree
+    preorder(root->right);
+}
+
+// Inorder traversal: Left -> Root -> Right
+void inorder(TreeNode* root) {
+    if (!root) return;
+
+    inorder(root->left);
+    cout << root->val << " ";
+    inorder(root->right);
+}
+
+// Postorder traversal: Left -> Right -> Root
+void postorder(TreeNode* root) {
+    if (!root) return;
+
+    postorder(root->left);
+    postorder(root->right);
+    cout << root->val << " ";
+}
+```
+
+**Tree Traversal Applications:**
+- **Preorder**: Used to create a copy of the tree or get prefix expression of an expression tree
+- **Inorder**: Gives nodes in non-decreasing order in a BST
+- **Postorder**: Used to delete the tree or get postfix expression of an expression tree
+
+### N-ary Tree Traversal
+
+Traverses a tree where each node can have any number of children.
+
+```cpp
+struct Node {
+    int val;
+    vector<Node*> children;
+    Node(int x) : val(x) {}
+};
+
+// DFS traversal of N-ary tree
+void dfs(Node* root) {
+    if (!root) return;
+
+    // Process current node
+    cout << root->val << " ";
+
+    // Recursively process all children
+    for (Node* child : root->children) {
+        dfs(child);
+    }
+}
+```
+
+### Flood Fill (Connected Component Labeling)
+
+Uses recursion to fill connected regions in a grid, similar to the paint bucket tool in image editors.
+
+```cpp
+void floodFill(vector<vector<int>>& image, int sr, int sc, int newColor, int originalColor) {
+    int m = image.size();
+    int n = image[0].size();
+
+    // Base cases: out of bounds or different color
+    if (sr < 0 || sr >= m || sc < 0 || sc >= n || image[sr][sc] != originalColor || image[sr][sc] == newColor) {
+        return;
+    }
+
+    // Fill current pixel
+    image[sr][sc] = newColor;
+
+    // Recursive calls for 4-directionally connected pixels
+    floodFill(image, sr + 1, sc, newColor, originalColor);  // down
+    floodFill(image, sr - 1, sc, newColor, originalColor);  // up
+    floodFill(image, sr, sc + 1, newColor, originalColor);  // right
+    floodFill(image, sr, sc - 1, newColor, originalColor);  // left
+}
+
+vector<vector<int>> floodFill(vector<vector<int>>& image, int sr, int sc, int newColor) {
+    int originalColor = image[sr][sc];
+    if (originalColor != newColor) {
+        floodFill(image, sr, sc, newColor, originalColor);
+    }
+    return image;
+}
+```
+
+**Explanation:**
+- **Base cases**: Out of bounds, different color, or already filled
+- **Recursive case**: Fill the current pixel and recursively fill adjacent pixels
+- Time complexity: O(m × n) where m and n are the dimensions of the image
+- Space complexity: O(m × n) in the worst case for the call stack
+
+## 6. Optimizing Recursive Solutions
+
+### Tail Recursion
+
+Tail recursion occurs when the recursive call is the final action in a function, allowing compiler optimizations.
+
+**Non-tail recursive factorial:**
+```cpp
+int factorial(int n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);  // Computation after the recursive call
+}
+```
+
+**Tail recursive factorial:**
+```cpp
+int factorialTailHelper(int n, int acc) {
+    if (n <= 1) return acc;
+    return factorialTailHelper(n - 1, n * acc);  // No computation after the recursive call
+}
+
+int factorialTail(int n) {
+    return factorialTailHelper(n, 1);
+}
+```
+
+**Benefits of Tail Recursion:**
+- Can be optimized by compilers to use a constant amount of stack space
+- Avoids stack overflow for large inputs
+- Often as efficient as an iterative solution
+
+### Memoization (Top-Down Dynamic Programming)
+
+Optimizes recursive functions by caching previously computed results to avoid redundant calculations.
+
+**Fibonacci with memoization:**
+```cpp
+int fibMemo(int n, unordered_map<int, int>& memo) {
+    // Check if already computed
+    if (memo.find(n) != memo.end()) {
+        return memo[n];
+    }
+
+    // Base cases
+    if (n <= 0) return 0;
+    if (n == 1) return 1;
+
+    // Recursive case with memoization
+    memo[n] = fibMemo(n - 1, memo) + fibMemo(n - 2, memo);
+    return memo[n];
+}
+
+int fibonacciOptimized(int n) {
+    unordered_map<int, int> memo;
+    return fibMemo(n, memo);
+}
+```
+
+**Before optimization:**
+- Time complexity: O(2^n)
+- Redundant calculations: fibMemo(3) computed multiple times
+
+**After optimization:**
+- Time complexity: O(n)
+- Each value computed exactly once and stored for future use
+
+## 7. Common Recursive Patterns
+
+### Generate All Subsets (Power Set)
+
+Generates all possible subsets of a set of elements.
+
+```cpp
+void generateSubsets(vector<int>& nums, int index, vector<int>& current, vector<vector<int>>& result) {
+    // Base case: we've considered all elements
+    if (index == nums.size()) {
+        result.push_back(current);
+        return;
+    }
+
+    // Case 1: don't include the current element
+    generateSubsets(nums, index + 1, current, result);
+
+    // Case 2: include the current element
+    current.push_back(nums[index]);
+    generateSubsets(nums, index + 1, current, result);
+
+    // Backtrack: remove the element for the previous recursive call
+    current.pop_back();
+}
+
+vector<vector<int>> subsets(vector<int>& nums) {
+    vector<vector<int>> result;
+    vector<int> current;
+    generateSubsets(nums, 0, current, result);
+    return result;
+}
+```
+
+**Explanation:**
+- For each element, we have two choices: include it or exclude it
+- Time complexity: O(2^n) where n is the number of elements
+- Space complexity: O(n) for the recursion stack
+
+### Generate All Permutations
+
+Generates all possible arrangements of elements in an array.
+
+```cpp
+void generatePermutations(vector<int>& nums, int start, vector<vector<int>>& result) {
+    // Base case: if we've placed all elements
+    if (start == nums.size()) {
+        result.push_back(nums);
+        return;
+    }
+
+    // Try placing each remaining element at the current position
+    for (int i = start; i < nums.size(); i++) {
+        // Swap nums[start] and nums[i]
+        swap(nums[start], nums[i]);
+
+        // Recursively generate permutations for the rest
+        generatePermutations(nums, start + 1, result);
+
+        // Backtrack: restore the array
+        swap(nums[start], nums[i]);
+    }
+}
+
+vector<vector<int>> permute(vector<int>& nums) {
+    vector<vector<int>> result;
+    generatePermutations(nums, 0, result);
+    return result;
+}
+```
+
+**Explanation:**
+- We try placing each element at each position
+- After placing an element, we recursively generate permutations for the remaining elements
+- Time complexity: O(n!) where n is the number of elements
+- Space complexity: O(n) for the recursion stack
+
+### Tower of Hanoi
+
+Classic recursive problem involving moving disks between pegs following specific rules.
+
+```cpp
+void towerOfHanoi(int n, char source, char auxiliary, char target) {
+    // Base case: move a single disk
+    if (n == 1) {
+        cout << "Move disk 1 from " << source << " to " << target << endl;
+        return;
+    }
+
+    // Move (n-1) disks from source to auxiliary using target as auxiliary
+    towerOfHanoi(n - 1, source, target, auxiliary);
+
+    // Move the nth disk from source to target
+    cout << "Move disk " << n << " from " << source << " to " << target << endl;
+
+    // Move (n-1) disks from auxiliary to target using source as auxiliary
+    towerOfHanoi(n - 1, auxiliary, source, target);
+}
+```
+
+**Explanation:**
+- **Base case**: When there's only one disk, move it directly
+- **Recursive case**: Break the problem into three steps:
+  1. Move (n-1) disks from source to auxiliary peg
+  2. Move the largest disk from source to target peg
+  3. Move (n-1) disks from auxiliary to target peg
+- Time complexity: O(2^n)
+- Space complexity: O(n) for the recursion stack
+
+## 8. Common Pitfalls and Best Practices
+
+### Avoiding Infinite Recursion
+
+Always ensure that:
+1. Base cases are correct and reachable
+2. Recursive calls move towards a base case
+3. All branches of logic eventually reach a base case
+
+```cpp
+// Bad example - possible infinite recursion
+int badRecursion(int n) {
+    if (n == 0) return 0;
+    return n + badRecursion(n - 2);  // May never reach base case for odd n
+}
+
+// Corrected version
+int goodRecursion(int n) {
+    if (n <= 0) return 0;  // Fixed base case to handle all inputs
+    return n + goodRecursion(n - 2);
+}
+```
+
+### Managing Stack Overflow
+
+Approaches to prevent stack overflow in recursive functions:
+1. Tail recursion (when supported by the compiler)
+2. Iteration instead of recursion for very deep recursion
+3. Memoization or dynamic programming to reduce call depth
+4. Increasing stack size (platform-specific)
+
+```cpp
+// Recursive factorial prone to stack overflow for large n
+int factorialUnsafe(int n) {
+    if (n <= 1) return 1;
+    return n * factorialUnsafe(n - 1);
+}
+
+// Iterative version avoids stack overflow
+int factorialSafe(int n) {
+    int result = 1;
+    for (int i = 2; i <= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+```
+
+## 9. Practice Problems
+
+### Sum of Digits
+
+Calculates the sum of digits in a positive integer.
+
+```cpp
+int sumOfDigits(int n) {
+    // Base case: single digit
+    if (n < 10) {
+        return n;
+    }
+
+    // Recursive case: last digit + sum of other digits
+    return n % 10 + sumOfDigits(n / 10);
+}
+```
+
+**Explanation:**
+- **Base case**: If n is a single digit (less than 10), return n
+- **Recursive case**: Return the last digit (n % 10) plus the sum of the remaining digits (n / 10)
+- Time complexity: O(log n) - proportional to the number of digits
+- Space complexity: O(log n) for the call stack
+
+### Is Palindrome (String)
+
+Checks if a string is a palindrome (reads the same forwards and backwards).
+
+```cpp
+bool isPalindromeHelper(const string& s, int left, int right) {
+    // Base case: empty string or single character
+    if (left >= right) {
+        return true;
+    }
+
+    // If characters match, check the rest of the string
+    if (s[left] == s[right]) {
+        return isPalindromeHelper(s, left + 1, right - 1);
+    }
+
+    // Characters don't match, not a palindrome
+    return false;
+}
+
+bool isPalindrome(const string& s) {
+    return isPalindromeHelper(s, 0, s.length() - 1);
+}
+```
+
+**Explanation:**
+- **Base case**: An empty string or a string with a single character is a palindrome
+- **Recursive case**: Check if the first and last characters match, then recursively check the substring
+- Time complexity: O(n) where n is the length of the string
+- Space complexity: O(n) for the call stack
+
+### Calculate Power with Modulo
+
+Calculates (x^n) % m, useful for large exponents in competitive programming.
+
+```cpp
+long long powerMod(long long x, long long n, long long m) {
+    // Base case
+    if (n == 0) return 1;
+
+    // Recursive case with optimization for even powers
+    if (n % 2 == 0) {
+        long long half = powerMod(x, n / 2, m);
+        return (half * half) % m;
+    } else {
+        return (x * powerMod(x, n - 1, m)) % m;
+    }
+}
+```
+
+**Explanation:**
+- **Base case**: x^0 = 1
+- **Recursive case**: Optimized calculation using the property x^n = (x^(n/2))^2 for even n
+- Time complexity: O(log n)
+- Space complexity: O(log n) for the call stack
+
+### Largest Element in Array
+
+Finds the largest element in an array using recursion.
+
+```cpp
+int findMax(vector<int>& nums, int n) {
+    // Base case: array with single element
+    if (n == 1) {
+        return nums[0];
+    }
+
+    // Recursive case: compare the last element with the max of the rest
+    return max(nums[n - 1], findMax(nums, n - 1));
+}
+
+int findLargest(vector<int>& nums) {
+    return findMax(nums, nums.size());
+}
+```
+
+**Explanation:**
+- **Base case**: If the array has only one element, it's the maximum
+- **Recursive case**: Compare the last element with the maximum of all previous elements
+- Time complexity: O(n) where n is the array size
+- Space complexity: O(n) for the call stack
+
+## 10. Summary of Recursive Techniques
+
+| Technique | Description | Example Problems |
+|-----------|-------------|------------------|
+| **Basic Recursion** | Function calls itself with a simpler version of the problem | Factorial, Fibonacci |
+| **Divide and Conquer** | Split problem into subproblems, solve recursively, combine results | Binary Search, Merge Sort, Quick Sort |
+| **Tail Recursion** | Recursive call is the last operation in the function | Optimized Factorial, Traversal |
+| **Memoization** | Cache results of recursive calls to avoid redundant calculations | Fibonacci with memoization, Dynamic Programming |
+| **Tree Recursion** | Each recursive call branches into multiple recursive calls | Tree Traversals, Combination Generation |
+| **Backtracking** | Build solutions incrementally and abandon paths that fail | Subset Generation, Permutations |
+| **Mutual Recursion** | Two or more functions call each other | Even-Odd checker, Grammar parsers |
+
+## 11. When to Use Recursion
+
+Recursion is especially suitable for problems that:
+1. Can be naturally divided into similar subproblems
+2. Have a clear base case
+3. Build complex structures (like trees, graphs)
+4. Need to explore different paths or combinations
+5. Involve backtracking
+
+However, consider iterative approaches when:
+1. The recursion depth would be very large
+2. Memory efficiency is critical
+3. The problem has an obvious iterative solution
+4. Performance is a major concern
+
+> This guide covers the core concepts and techniques of recursive programming, equipping you with the tools to recognize when recursion is appropriate and implement efficient recursive solutions to a wide range of problems!

@@ -1,0 +1,577 @@
+---
+title: Backtracking Algorithms
+description: Master backtracking techniques in C++ with systematic approaches to solve permutations, combinations, subset problems, and applications like N-Queens, Sudoku, and maze solving.
+---
+
+Backtracking is a powerful algorithmic technique used to systematically explore all possible solutions for combinatorial problems. It builds candidate solutions incrementally and abandons a path as soon as it determines the path cannot lead to a valid solution.
+
+## 1. Basics & Core Concept
+
+Backtracking works by exploring all possible configurations of a solution space and backing out of paths that don't lead to a solution.
+
+```cpp
+void backtrack(state, choices) {
+    if (isGoalReached(state)) {
+        // Found a solution, record it
+        recordSolution(state);
+        return;
+    }
+
+    for (choice in choices) {
+        if (isValid(state, choice)) {
+            // Make a choice
+            applyChoice(state, choice);
+
+            // Recurse with updated state
+            backtrack(state, remaining_choices);
+
+            // Undo the choice (backtrack)
+            undoChoice(state, choice);
+        }
+    }
+}
+```
+
+## 2. Permutations
+
+Generates all possible permutations of an array of elements.
+
+```cpp
+void generatePermutations(vector<int>& nums, vector<vector<int>>& result, int start) {
+    // Base case: if we've placed all elements, we have a permutation
+    if (start == nums.size()) {
+        result.push_back(nums);
+        return;
+    }
+
+    // Try placing each remaining element at the current position
+    for (int i = start; i < nums.size(); i++) {
+        // Swap elements to place nums[i] at the current position
+        swap(nums[start], nums[i]);
+
+        // Recurse to place remaining elements
+        generatePermutations(nums, result, start + 1);
+
+        // Backtrack: restore the original array for the next iteration
+        swap(nums[start], nums[i]);
+    }
+}
+
+vector<vector<int>> permute(vector<int>& nums) {
+    vector<vector<int>> result;
+    generatePermutations(nums, result, 0);
+    return result;
+}
+```
+
+**Explanation:**
+- We systematically generate permutations by deciding which element goes at each position.
+- At each step, we swap the current element with each remaining element.
+- After recursively generating permutations with that choice, we backtrack by swapping back.
+- Time complexity: O(n!) where n is the number of elements.
+
+## 3. Combinations
+
+Generates all possible k-sized combinations from a set of n elements.
+
+```cpp
+void generateCombinations(int n, int k, int start, vector<int>& current, vector<vector<int>>& result) {
+    // Base case: if we've selected k elements, we have a combination
+    if (current.size() == k) {
+        result.push_back(current);
+        return;
+    }
+
+    // Try selecting each remaining element
+    for (int i = start; i <= n; i++) {
+        // Include the current element
+        current.push_back(i);
+
+        // Recurse to select remaining elements
+        generateCombinations(n, k, i + 1, current, result);
+
+        // Backtrack: remove the current element for the next iteration
+        current.pop_back();
+    }
+}
+
+vector<vector<int>> combine(int n, int k) {
+    vector<vector<int>> result;
+    vector<int> current;
+    generateCombinations(n, k, 1, current, result);
+    return result;
+}
+```
+
+**Explanation:**
+- We build combinations by selecting elements in ascending order.
+- At each step, we decide whether to include the current element.
+- After recursively generating combinations with that choice, we backtrack by removing the element.
+- Time complexity: O(n choose k) which is O(n!/(k!(n-k)!))
+
+## 4. Subsets
+
+Generates all possible subsets of an array of elements.
+
+```cpp
+void generateSubsets(vector<int>& nums, int index, vector<int>& current, vector<vector<int>>& result) {
+    // Add the current subset to the result
+    result.push_back(current);
+
+    // Try adding each remaining element
+    for (int i = index; i < nums.size(); i++) {
+        // Include the current element
+        current.push_back(nums[i]);
+
+        // Recurse to add more elements
+        generateSubsets(nums, i + 1, current, result);
+
+        // Backtrack: remove the current element for the next iteration
+        current.pop_back();
+    }
+}
+
+vector<vector<int>> subsets(vector<int>& nums) {
+    vector<vector<int>> result;
+    vector<int> current;
+    generateSubsets(nums, 0, current, result);
+    return result;
+}
+```
+
+**Explanation:**
+- The empty set is always a subset, so we add it at the beginning.
+- For each element, we have two choices: include it or exclude it.
+- We generate all subsets by trying both choices for each element.
+- Time complexity: O(2^n) where n is the number of elements.
+
+## 5. N-Queens Problem
+
+Places N queens on an N×N chessboard so that no two queens attack each other.
+
+```cpp
+bool isSafe(vector<string>& board, int row, int col, int n) {
+    // Check column
+    for (int i = 0; i < row; i++) {
+        if (board[i][col] == 'Q') return false;
+    }
+
+    // Check upper-left diagonal
+    for (int i = row, j = col; i >= 0 && j >= 0; i--, j--) {
+        if (board[i][j] == 'Q') return false;
+    }
+
+    // Check upper-right diagonal
+    for (int i = row, j = col; i >= 0 && j < n; i--, j++) {
+        if (board[i][j] == 'Q') return false;
+    }
+
+    return true;
+}
+
+void solveNQueensUtil(int n, int row, vector<string>& board, vector<vector<string>>& result) {
+    // Base case: if all queens are placed, we have a solution
+    if (row == n) {
+        result.push_back(board);
+        return;
+    }
+
+    // Try placing the queen in each column of the current row
+    for (int col = 0; col < n; col++) {
+        if (isSafe(board, row, col, n)) {
+            // Place the queen
+            board[row][col] = 'Q';
+
+            // Recurse to place queens in the next rows
+            solveNQueensUtil(n, row + 1, board, result);
+
+            // Backtrack: remove the queen
+            board[row][col] = '.';
+        }
+    }
+}
+
+vector<vector<string>> solveNQueens(int n) {
+    vector<vector<string>> result;
+    vector<string> board(n, string(n, '.'));
+    solveNQueensUtil(n, 0, board, result);
+    return result;
+}
+```
+
+**Explanation:**
+- We try to place a queen in each column of the current row.
+- Before placing a queen, we check if it's safe (not attacked by any other queen).
+- After placing a queen, we recursively try to place queens in subsequent rows.
+- If we can't place a queen in any column, we backtrack and try a different configuration.
+- Time complexity: O(N!) where N is the board size.
+
+## 6. Sudoku Solver
+
+Solves a 9x9 Sudoku puzzle by filling in empty cells with valid digits.
+
+```cpp
+bool isValid(vector<vector<char>>& board, int row, int col, char num) {
+    // Check row
+    for (int j = 0; j < 9; j++) {
+        if (board[row][j] == num) return false;
+    }
+
+    // Check column
+    for (int i = 0; i < 9; i++) {
+        if (board[i][col] == num) return false;
+    }
+
+    // Check 3x3 box
+    int boxRow = row - row % 3;
+    int boxCol = col - col % 3;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (board[boxRow + i][boxCol + j] == num) return false;
+        }
+    }
+
+    return true;
+}
+
+bool solveSudoku(vector<vector<char>>& board, int row, int col) {
+    // If we've filled the entire board, we're done
+    if (row == 9) return true;
+
+    // Move to the next cell
+    int nextRow = (col == 8) ? row + 1 : row;
+    int nextCol = (col == 8) ? 0 : col + 1;
+
+    // If the current cell is already filled, move to the next cell
+    if (board[row][col] != '.') {
+        return solveSudoku(board, nextRow, nextCol);
+    }
+
+    // Try filling the current cell with each digit
+    for (char num = '1'; num <= '9'; num++) {
+        if (isValid(board, row, col, num)) {
+            // Place the digit
+            board[row][col] = num;
+
+            // Recurse to fill the next cells
+            if (solveSudoku(board, nextRow, nextCol)) {
+                return true;
+            }
+
+            // Backtrack: remove the digit
+            board[row][col] = '.';
+        }
+    }
+
+    // No valid digit found, trigger backtracking
+    return false;
+}
+
+void solveSudoku(vector<vector<char>>& board) {
+    solveSudoku(board, 0, 0);
+}
+```
+
+**Explanation:**
+- We try to fill each empty cell with a valid digit (1-9).
+- A digit is valid if it doesn't appear in the same row, column, or 3x3 box.
+- After filling a cell, we recursively try to fill the remaining cells.
+- If we can't fill a cell with any digit, we backtrack and try a different digit for a previous cell.
+- Time complexity: O(9^(n*n)) where n is the board size (typically 9).
+
+## 7. Maze Solving
+
+Finds a path from the start to the end of a maze.
+
+```cpp
+bool solveMaze(vector<vector<int>>& maze, int x, int y, vector<vector<int>>& solution) {
+    int n = maze.size();
+
+    // Base case: if (x, y) is the goal, mark it as part of the path
+    if (x == n - 1 && y == n - 1 && maze[x][y] == 1) {
+        solution[x][y] = 1;
+        return true;
+    }
+
+    // Check if (x, y) is valid and not visited
+    if (x >= 0 && x < n && y >= 0 && y < n && maze[x][y] == 1) {
+        // Mark (x, y) as part of the path
+        solution[x][y] = 1;
+
+        // Try moving right
+        if (solveMaze(maze, x, y + 1, solution)) {
+            return true;
+        }
+
+        // Try moving down
+        if (solveMaze(maze, x + 1, y, solution)) {
+            return true;
+        }
+
+        // Backtrack: unmark (x, y) as part of the path
+        solution[x][y] = 0;
+        return false;
+    }
+
+    return false;
+}
+
+vector<vector<int>> findPath(vector<vector<int>>& maze) {
+    int n = maze.size();
+    vector<vector<int>> solution(n, vector<int>(n, 0));
+
+    if (solveMaze(maze, 0, 0, solution)) {
+        return solution;
+    }
+
+    // No path found
+    return vector<vector<int>>();
+}
+```
+
+**Explanation:**
+- We start at the top-left corner and try to reach the bottom-right corner.
+- At each step, we mark the current cell as part of the path and try moving right or down.
+- If we can't find a path from the current cell, we backtrack and try a different direction.
+- Time complexity: O(2^(n^2)) in the worst case, but typically much better in practice.
+
+## 8. Word Search
+
+Determines if a word exists in a grid of characters.
+
+```cpp
+bool exist(vector<vector<char>>& board, string word) {
+    int m = board.size();
+    int n = board[0].size();
+
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            if (search(board, word, 0, i, j)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool search(vector<vector<char>>& board, string word, int index, int x, int y) {
+    int m = board.size();
+    int n = board[0].size();
+
+    // Base case: if we've found all characters, return true
+    if (index == word.length()) {
+        return true;
+    }
+
+    // Check if (x, y) is valid and matches the current character
+    if (x < 0 || x >= m || y < 0 || y >= n || board[x][y] != word[index]) {
+        return false;
+    }
+
+    // Mark the current cell as visited
+    char temp = board[x][y];
+    board[x][y] = '#';
+
+    // Try all four directions
+    bool found = search(board, word, index + 1, x + 1, y) ||
+                 search(board, word, index + 1, x - 1, y) ||
+                 search(board, word, index + 1, x, y + 1) ||
+                 search(board, word, index + 1, x, y - 1);
+
+    // Backtrack: restore the cell
+    board[x][y] = temp;
+
+    return found;
+}
+```
+
+**Explanation:**
+- We try to start the word from each cell in the grid.
+- From each starting cell, we explore all four directions to find the next character.
+- After finding a character, we mark it as visited and continue the search.
+- If we can't find the next character, we backtrack and try a different direction.
+- Time complexity: O(m*n*4^l) where m, n are the grid dimensions and l is the word length.
+
+## 9. Graph Coloring
+
+Assigns colors to vertices such that no adjacent vertices have the same color.
+
+```cpp
+bool isSafe(vector<vector<int>>& graph, vector<int>& colors, int vertex, int color) {
+    int n = graph.size();
+
+    // Check if any adjacent vertex has the same color
+    for (int i = 0; i < n; i++) {
+        if (graph[vertex][i] && colors[i] == color) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool graphColoringUtil(vector<vector<int>>& graph, int m, vector<int>& colors, int vertex) {
+    int n = graph.size();
+
+    // Base case: if all vertices are colored, return true
+    if (vertex == n) {
+        return true;
+    }
+
+    // Try assigning each color to the current vertex
+    for (int color = 1; color <= m; color++) {
+        if (isSafe(graph, colors, vertex, color)) {
+            // Assign the color
+            colors[vertex] = color;
+
+            // Recurse to color the next vertex
+            if (graphColoringUtil(graph, m, colors, vertex + 1)) {
+                return true;
+            }
+
+            // Backtrack: remove the color
+            colors[vertex] = 0;
+        }
+    }
+
+    // No valid coloring found
+    return false;
+}
+
+vector<int> graphColoring(vector<vector<int>>& graph, int m) {
+    int n = graph.size();
+    vector<int> colors(n, 0);
+
+    if (graphColoringUtil(graph, m, colors, 0)) {
+        return colors;
+    }
+
+    // No valid coloring with m colors
+    return vector<int>();
+}
+```
+
+**Explanation:**
+- We try to assign a color to each vertex such that no adjacent vertices have the same color.
+- Before assigning a color, we check if it's safe (no adjacent vertex has the same color).
+- After assigning a color, we recursively try to color the remaining vertices.
+- If we can't color a vertex with any available color, we backtrack and try a different color for a previous vertex.
+- Time complexity: O(m^n) where m is the number of colors and n is the number of vertices.
+
+## 10. Advanced: Optimized Backtracking Techniques
+
+### Pruning Techniques
+Pruning reduces the search space by quickly eliminating paths that cannot lead to a solution.
+
+```cpp
+bool canPlace(vector<int>& nums, int target, int index, int currentSum) {
+    // Early termination: if sum already exceeds target, no need to explore further
+    if (currentSum > target) {
+        return false;
+    }
+
+    // If we've considered all elements and sum equals target, return true
+    if (index == nums.size()) {
+        return currentSum == target;
+    }
+
+    // Try including the current element
+    if (canPlace(nums, target, index + 1, currentSum + nums[index])) {
+        return true;
+    }
+
+    // Try excluding the current element
+    return canPlace(nums, target, index + 1, currentSum);
+}
+```
+
+### State Compression
+Using bit manipulation to represent states efficiently can significantly reduce memory usage.
+
+```cpp
+vector<vector<int>> subsets(vector<int>& nums) {
+    int n = nums.size();
+    vector<vector<int>> result;
+
+    // Generate all possible subsets using bit manipulation
+    for (int mask = 0; mask < (1 << n); mask++) {
+        vector<int> subset;
+        for (int i = 0; i < n; i++) {
+            // If the i-th bit is set, include nums[i]
+            if (mask & (1 << i)) {
+                subset.push_back(nums[i]);
+            }
+        }
+        result.push_back(subset);
+    }
+
+    return result;
+}
+```
+
+### Memoization
+Combining backtracking with dynamic programming to avoid recomputing the same states.
+
+```cpp
+int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid, int i, int j,
+                             vector<vector<int>>& memo) {
+    int m = obstacleGrid.size();
+    int n = obstacleGrid[0].size();
+
+    // Base cases
+    if (i < 0 || i >= m || j < 0 || j >= n || obstacleGrid[i][j] == 1) {
+        return 0;
+    }
+
+    if (i == m - 1 && j == n - 1) {
+        return 1;
+    }
+
+    // If already computed, return the cached result
+    if (memo[i][j] != -1) {
+        return memo[i][j];
+    }
+
+    // Compute and cache the result
+    memo[i][j] = uniquePathsWithObstacles(obstacleGrid, i + 1, j, memo) +
+                 uniquePathsWithObstacles(obstacleGrid, i, j + 1, memo);
+
+    return memo[i][j];
+}
+
+int uniquePaths(vector<vector<int>>& obstacleGrid) {
+    int m = obstacleGrid.size();
+    int n = obstacleGrid[0].size();
+    vector<vector<int>> memo(m, vector<int>(n, -1));
+
+    return uniquePathsWithObstacles(obstacleGrid, 0, 0, memo);
+}
+```
+
+## 11. Summary of Backtracking Problems
+
+| Problem Type            | Key Technique                                             | Time Complexity      |
+|-------------------------|-----------------------------------------------------------|----------------------|
+| **Permutations**        | Generate all arrangements of elements                     | O(n!)                |
+| **Combinations**        | Generate all ways to select k elements from n             | O(n choose k)        |
+| **Subsets**             | Generate all possible subsets                             | O(2^n)               |
+| **N-Queens**            | Place N queens on a chessboard without attacking          | O(N!)                |
+| **Sudoku**              | Fill a 9x9 grid with digits 1-9                           | O(9^(n*n))           |
+| **Maze Solving**        | Find a path from start to end                             | O(2^(n^2))           |
+| **Word Search**         | Find a word in a grid of characters                       | O(m*n*4^l)           |
+| **Graph Coloring**      | Color vertices such that adjacent vertices have different colors | O(m^n)          |
+| **Optimized Techniques**| Pruning, state compression, memoization                   | Varies               |
+
+## 12. When to Use Backtracking
+
+Backtracking is ideal for problems where:
+
+1. You need to find all possible solutions
+2. The problem can be broken down into a sequence of decisions
+3. Each decision can be undone (backtracked)
+4. There's a clear way to determine if a partial solution can lead to a complete solution
+
+Remember: Backtracking is essentially depth-first search (DFS) on the state space tree of all possible solutions.
+
+> This guide equips you with the techniques needed to recognize and solve a wide variety of backtracking problems efficiently!

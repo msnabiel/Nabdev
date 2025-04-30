@@ -86,20 +86,26 @@ export const docsConfig: DocsConfig = {
       title: "Algorithms",
       items: [
         {
-          title: "Introduction",
-          href: "/docs/in-progress",
-          disabled: true,
+          title: "Overview",
+          href: "/docs/algorithms",
         },
         {
-          title: "Build your own",
-          href: "/docs/in-progress",
-          disabled: true,
+          title: "Sorting Algorithms",
+          href: "/docs/algorithms/sorting-algorithms",
         },
         {
-          title: "Writing Posts",
-          href: "/docs/in-progress",
-          disabled: true,
+          title: "Searching Algorithms",
+          href: "/docs/algorithms/searching-algorithms",
         },
+        {
+          title: "Dynamic Programming",
+          href: "/docs/algorithms/dynamic-programming",
+        },
+        {
+          title: "Greedy Algorithms",
+          href: "/docs/algorithms/greedy-algorithms",
+        },
+
       ],
     },
     {
