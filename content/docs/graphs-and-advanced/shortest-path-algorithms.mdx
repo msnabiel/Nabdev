@@ -1,0 +1,575 @@
+---
+title: Shortest Path Algorithms
+description: Master essential shortest path algorithms including Dijkstra's, Bellman-Ford, Floyd-Warshall, and A* search with implementations, complexity analysis, and practical applications.
+---
+
+Shortest path algorithms are fundamental to graph theory and have numerous real-world applications, from navigation systems to network routing. This guide explores the most important shortest path algorithms with detailed implementations and analysis.
+
+## 1. Dijkstra's Algorithm
+
+Dijkstra's algorithm finds the shortest path from a source vertex to all other vertices in a weighted graph with non-negative edge weights.
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <limits>
+using namespace std;
+
+typedef pair<int, int> pii; // pair of (distance, vertex)
+
+vector<int> dijkstra(const vector<vector<pii>>& graph, int source) {
+    int n = graph.size();
+    vector<int> dist(n, numeric_limits<int>::max());
+    dist[source] = 0;
+
+    // Min-heap priority queue
+    priority_queue<pii, vector<pii>, greater<pii>> pq;
+    pq.push({0, source});
+
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        int d = pq.top().first;
+        pq.pop();
+
+        // If this distance is already outdated, skip
+        if (d > dist[u]) continue;
+
+        // Explore all adjacent vertices
+        for (auto& edge : graph[u]) {
+            int v = edge.first;   // Adjacent vertex
+            int weight = edge.second;  // Edge weight
+
+            // Relaxation step
+            if (dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+                pq.push({dist[v], v});
+            }
+        }
+    }
+
+    return dist;
+}
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(E log V) with binary heap, where E is the number of edges and V is the number of vertices.
+- **Space Complexity**: O(V) for the distance array and O(E) for the priority queue.
+
+### Key Points
+
+- Works correctly only with non-negative edge weights.
+- Uses a greedy approach, always selecting the closest unvisited vertex.
+- Optimized with priority queue for better performance.
+- Early termination is possible if only looking for a specific target vertex.
+
+## 2. Bellman-Ford Algorithm
+
+Bellman-Ford finds shortest paths from a source vertex to all other vertices, even in graphs with negative edge weights (as long as there are no negative cycles).
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <limits>
+using namespace std;
+
+struct Edge {
+    int src, dest, weight;
+};
+
+vector<int> bellmanFord(const vector<Edge>& edges, int V, int source) {
+    // Initialize distances
+    vector<int> dist(V, numeric_limits<int>::max());
+    dist[source] = 0;
+
+    // Relax all edges V-1 times
+    for (int i = 0; i < V - 1; i++) {
+        for (const Edge& edge : edges) {
+            if (dist[edge.src] != numeric_limits<int>::max() &&
+                dist[edge.src] + edge.weight < dist[edge.dest]) {
+                dist[edge.dest] = dist[edge.src] + edge.weight;
+            }
+        }
+    }
+
+    // Check for negative-weight cycles
+    for (const Edge& edge : edges) {
+        if (dist[edge.src] != numeric_limits<int>::max() &&
+            dist[edge.src] + edge.weight < dist[edge.dest]) {
+            // Negative cycle exists
+            cout << "Graph contains negative weight cycle" << endl;
+            return {};
+        }
+    }
+
+    return dist;
+}
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(V × E), where V is the number of vertices and E is the number of edges.
+- **Space Complexity**: O(V) for the distance array.
+
+### Key Points
+
+- Can handle negative edge weights (unlike Dijkstra's).
+- Detects negative cycles: if after V-1 iterations we can still relax an edge, there's a negative cycle.
+- Slower than Dijkstra's algorithm for graphs without negative edges.
+- Used in routing protocols like RIP (Routing Information Protocol).
+
+## 3. Floyd-Warshall Algorithm
+
+Floyd-Warshall finds all-pairs shortest paths in a weighted graph, computing the shortest path between every pair of vertices.
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <limits>
+using namespace std;
+
+vector<vector<int>> floydWarshall(const vector<vector<int>>& graph) {
+    int V = graph.size();
+    vector<vector<int>> dist = graph;
+
+    // Initialize dist matrix
+    for (int i = 0; i < V; i++) {
+        for (int j = 0; j < V; j++) {
+            if (i != j && dist[i][j] == 0) {
+                dist[i][j] = numeric_limits<int>::max();
+            }
+        }
+    }
+
+    // Core algorithm: consider each vertex as an intermediate vertex
+    for (int k = 0; k < V; k++) {
+        for (int i = 0; i < V; i++) {
+            for (int j = 0; j < V; j++) {
+                // Skip if there's no path from i to k or k to j
+                if (dist[i][k] == numeric_limits<int>::max() ||
+                    dist[k][j] == numeric_limits<int>::max())
+                    continue;
+
+                // Relaxation step
+                if (dist[i][j] > dist[i][k] + dist[k][j]) {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                }
+            }
+        }
+    }
+
+    // Check for negative cycles (optional)
+    for (int i = 0; i < V; i++) {
+        if (dist[i][i] < 0) {
+            cout << "Graph contains negative weight cycle" << endl;
+            break;
+        }
+    }
+
+    return dist;
+}
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(V³), where V is the number of vertices.
+- **Space Complexity**: O(V²) for the distance matrix.
+
+### Key Points
+
+- Computes shortest paths between all pairs of vertices.
+- Can handle negative edge weights but not negative cycles.
+- Simple to implement with only a triple-nested loop.
+- Works well for dense graphs where E ≈ V².
+- Used in network routing, robot path planning, and finding transitive closure.
+
+## 4. A* Search Algorithm
+
+A* is a best-first search algorithm that finds the least-cost path from a start node to a goal node, using a heuristic function to guide the search.
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <algorithm>
+#include <cmath>
+using namespace std;
+
+typedef pair<int, int> Coordinate;
+
+// Hash function for Coordinate
+struct CoordinateHash {
+    size_t operator()(const Coordinate& coord) const {
+        return hash<int>()(coord.first) ^ hash<int>()(coord.second);
+    }
+};
+
+// Helper for Manhattan distance heuristic
+int manhattanDistance(const Coordinate& a, const Coordinate& b) {
+    return abs(a.first - b.first) + abs(a.second - b.second);
+}
+
+vector<Coordinate> aStar(const vector<vector<int>>& grid,
+                         const Coordinate& start,
+                         const Coordinate& goal) {
+    int rows = grid.size();
+    int cols = grid[0].size();
+
+    // Directions: up, right, down, left
+    vector<pair<int, int>> directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+
+    // Priority queue for open set (f_score, coordinate)
+    typedef pair<int, Coordinate> Node;
+    priority_queue<Node, vector<Node>, greater<Node>> openSet;
+
+    // Track visited nodes and their parents
+    unordered_map<Coordinate, Coordinate, CoordinateHash> cameFrom;
+    unordered_map<Coordinate, int, CoordinateHash> gScore;
+
+    // Initialize with start node
+    openSet.push({manhattanDistance(start, goal), start});
+    gScore[start] = 0;
+
+    while (!openSet.empty()) {
+        Coordinate current = openSet.top().second;
+        openSet.pop();
+
+        // Reached goal
+        if (current == goal) {
+            // Reconstruct path
+            vector<Coordinate> path;
+            while (current != start) {
+                path.push_back(current);
+                current = cameFrom[current];
+            }
+            path.push_back(start);
+            reverse(path.begin(), path.end());
+            return path;
+        }
+
+        // Explore neighbors
+        for (auto& dir : directions) {
+            Coordinate neighbor = {current.first + dir.first, current.second + dir.second};
+
+            // Check bounds and if walkable
+            if (neighbor.first < 0 || neighbor.first >= rows ||
+                neighbor.second < 0 || neighbor.second >= cols ||
+                grid[neighbor.first][neighbor.second] == 1) {
+                continue;
+            }
+
+            // Calculate tentative g_score
+            int tentative_gScore = gScore[current] + 1;
+
+            // If this path is better than any previous one
+            if (!gScore.count(neighbor) || tentative_gScore < gScore[neighbor]) {
+                cameFrom[neighbor] = current;
+                gScore[neighbor] = tentative_gScore;
+                int fScore = tentative_gScore + manhattanDistance(neighbor, goal);
+                openSet.push({fScore, neighbor});
+            }
+        }
+    }
+
+    // No path found
+    return {};
+}
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(E) in the worst case, but typically much better due to the heuristic. E is the number of edges.
+- **Space Complexity**: O(V) for storing the priority queue, visited set, and path.
+
+### Key Points
+
+- Combines Dijkstra's algorithm with a heuristic function to guide the search.
+- Uses f(n) = g(n) + h(n), where g(n) is the cost to reach node n, and h(n) is the estimated cost from n to the goal.
+- The heuristic function must be admissible (never overestimate) to guarantee an optimal solution.
+- Common heuristics include Manhattan distance (for grid-based movement) and Euclidean distance.
+- Used extensively in pathfinding for games, GPS navigation, and robotics.
+
+## 5. Optimizations & Extensions
+
+### Bidirectional Dijkstra
+
+Runs Dijkstra's algorithm simultaneously from both the source and target vertices, terminating when the two searches meet.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <limits>
+#include <algorithm>
+using namespace std;
+
+typedef pair<int, int> pii;
+
+int bidirectionalDijkstra(const vector<vector<pii>>& graph,
+                         const vector<vector<pii>>& reverseGraph,
+                         int source, int target) {
+    int n = graph.size();
+
+    // Forward search from source
+    vector<int> distFrom(n, numeric_limits<int>::max());
+    distFrom[source] = 0;
+    priority_queue<pii, vector<pii>, greater<pii>> pqFrom;
+    pqFrom.push({0, source});
+
+    // Backward search from target
+    vector<int> distTo(n, numeric_limits<int>::max());
+    distTo[target] = 0;
+    priority_queue<pii, vector<pii>, greater<pii>> pqTo;
+    pqTo.push({0, target});
+
+    // Track visited vertices
+    vector<bool> visitedFrom(n, false);
+    vector<bool> visitedTo(n, false);
+
+    int shortest = numeric_limits<int>::max();
+
+    // Alternating search
+    while (!pqFrom.empty() && !pqTo.empty()) {
+        // If minimum distance exceeds shortest path found so far
+        if (pqFrom.top().first + pqTo.top().first >= shortest) {
+            break;
+        }
+
+        // Process vertex in forward search
+        int u = pqFrom.top().second;
+        int d = pqFrom.top().first;
+        pqFrom.pop();
+
+        if (visitedFrom[u]) continue;
+        visitedFrom[u] = true;
+
+        // Update shortest path through u
+        if (visitedTo[u]) {
+            shortest = min(shortest, distFrom[u] + distTo[u]);
+        }
+
+        // Relaxation in forward direction
+        for (auto& edge : graph[u]) {
+            int v = edge.first;
+            int weight = edge.second;
+
+            if (distFrom[u] + weight < distFrom[v]) {
+                distFrom[v] = distFrom[u] + weight;
+                pqFrom.push({distFrom[v], v});
+            }
+        }
+
+        // Process vertex in backward search
+        u = pqTo.top().second;
+        d = pqTo.top().first;
+        pqTo.pop();
+
+        if (visitedTo[u]) continue;
+        visitedTo[u] = true;
+
+        // Update shortest path through u
+        if (visitedFrom[u]) {
+            shortest = min(shortest, distFrom[u] + distTo[u]);
+        }
+
+        // Relaxation in backward direction
+        for (auto& edge : reverseGraph[u]) {
+            int v = edge.first;
+            int weight = edge.second;
+
+            if (distTo[u] + weight < distTo[v]) {
+                distTo[v] = distTo[u] + weight;
+                pqTo.push({distTo[v], v});
+            }
+        }
+    }
+
+    return shortest;
+}
+```
+
+### Johnson's Algorithm
+
+Johnson's algorithm finds all-pairs shortest paths in a sparse directed graph, combining elements of Dijkstra's and Bellman-Ford.
+
+```cpp
+// Pseudocode for Johnson's Algorithm
+function johnsons(Graph G):
+    // Add a new vertex q with zero-weight edges to all vertices
+    G' = add_vertex(G, q)
+    for each vertex v in G:
+        add_edge(G', q, v, 0)
+
+    // Run Bellman-Ford from q to get h values
+    h = bellman_ford(G', q)
+    if h contains negative cycle:
+        return "Negative cycle detected"
+
+    // Reweight the edges
+    for each edge (u,v) with weight w in G:
+        G.set_weight(u, v, w + h[u] - h[v])
+
+    // Run Dijkstra from each vertex
+    for each vertex u in G:
+        distances[u] = dijkstra(G, u)
+
+        // Convert distances back to original weights
+        for each vertex v in G:
+            if distances[u][v] != infinity:
+                distances[u][v] = distances[u][v] - h[u] + h[v]
+
+    return distances
+```
+
+### Memory-Optimized Path Reconstruction
+
+Store predecessors instead of the full path, reducing memory usage for large graphs.
+
+```cpp
+vector<int> reconstructPath(const vector<int>& predecessor, int source, int target) {
+    vector<int> path;
+
+    // Check if there's a path
+    if (predecessor[target] == -1 && source != target) {
+        return path;  // No path exists
+    }
+
+    // Reconstruct path by following predecessors
+    for (int v = target; v != source; v = predecessor[v]) {
+        path.push_back(v);
+    }
+    path.push_back(source);
+    reverse(path.begin(), path.end());
+
+    return path;
+}
+```
+
+## 6. Real-World Applications
+
+### Navigation Systems
+
+- **Application**: GPS routing systems use variants of Dijkstra's or A* to find the shortest or fastest route.
+- **Challenge**: Real-time traffic conditions require dynamic edge weights.
+- **Solution**: Use bidirectional search with heuristics for faster computation.
+
+```cpp
+// Example of adding traffic data to edge weights
+struct Road {
+    int distance;     // in meters
+    int baseTime;     // travel time in normal conditions (seconds)
+    float trafficFactor;  // multiplier for current traffic (1.0 = normal)
+
+    int getCurrentTime() const {
+        return baseTime * trafficFactor;
+    }
+};
+```
+
+### Network Routing
+
+- **Application**: Routing protocols like OSPF use shortest path algorithms.
+- **Challenge**: Multiple metrics (bandwidth, latency, reliability).
+- **Solution**: Use composite edge weights or multi-objective optimization.
+
+```cpp
+// Example of composite edge weights for network routing
+struct NetworkLink {
+    int bandwidth;    // Mbps
+    int latency;      // ms
+    float reliability; // 0.0-1.0
+
+    // Calculate composite weight based on priorities
+    int getWeight(float bwPriority, float latencyPriority, float relPriority) const {
+        return -bwPriority * bandwidth +
+               latencyPriority * latency +
+               -relPriority * (reliability * 100);
+    }
+};
+```
+
+### Social Network Analysis
+
+- **Application**: Calculating degrees of separation between users.
+- **Challenge**: Extremely large graphs with millions of vertices.
+- **Solution**: Use bidirectional BFS for unweighted graphs or parallelized algorithms.
+
+### Transportation Networks
+
+- **Application**: Optimizing public transit routes, delivery routes.
+- **Challenge**: Time-dependent edge weights (rush hour, schedules).
+- **Solution**: Use time-expanded networks with modified Dijkstra's algorithm.
+
+## 7. Comparison of Algorithms
+
+| Algorithm | Time Complexity | Space Complexity | Handles Negative Weights | Use Case |
+|-----------|----------------|-----------------|--------------------------|----------|
+| **Dijkstra's** | O(E log V) | O(V) | No | Single-source, non-negative weights |
+| **Bellman-Ford** | O(V × E) | O(V) | Yes | Single-source, can detect negative cycles |
+| **Floyd-Warshall** | O(V³) | O(V²) | Yes | All-pairs shortest paths |
+| **A*** | O(E) worst case | O(V) | No | Goal-directed pathfinding |
+| **Bidirectional** | O(E log V) | O(V) | No | Single-pair, faster than Dijkstra's |
+| **Johnson's** | O(V²log V + VE) | O(V²) | Yes | All-pairs on sparse graphs |
+
+## 8. Common Pitfalls and Solutions
+
+### Handling Infinite Distances
+
+- **Issue**: Integer overflow when using INT_MAX for unconnected vertices.
+- **Solution**: Use a special value or separate tracking of reachability.
+
+```cpp
+// Safe addition to avoid overflow
+int safeAdd(int a, int b) {
+    if (a == numeric_limits<int>::max() || b == numeric_limits<int>::max())
+        return numeric_limits<int>::max();
+    return a + b;
+}
+```
+
+### Dealing with Zero-Weight Cycles
+
+- **Issue**: Zero-weight cycles don't create negative cycles but may cause infinite loops.
+- **Solution**: Track visited vertices during relaxation.
+
+### Path Reconstruction Errors
+
+- **Issue**: Incorrect path reconstruction in graphs with multiple shortest paths.
+- **Solution**: Maintain consistent tie-breaking rules or track all possible paths.
+
+## 9. Practice Problems
+
+1. **Single-Source Shortest Paths**: Implement Dijkstra's algorithm to find shortest paths from a given source to all vertices.
+
+2. **Negative Cycle Detection**: Use Bellman-Ford to detect if a graph contains any negative weight cycles.
+
+3. **All-Pairs Shortest Paths**: Implement Floyd-Warshall to compute shortest paths between all pairs of vertices.
+
+4. **A* Pathfinding**: Implement A* search to find the shortest path in a 2D grid with obstacles.
+
+5. **Time-Dependent Routing**: Implement a shortest path algorithm for a graph where edge weights change based on the time of day.
+
+## 10. Summary of Techniques
+
+| Technique | Key Insight | Implementation Detail |
+|-----------|------------|----------------------|
+| **Priority Queue** | Efficiently selects the next vertex in Dijkstra's | Use min-heap for better performance |
+| **Relaxation** | Core operation of updating distances | Check if new path is shorter than current best |
+| **Heuristic Function** | Guides A* search toward goal | Must be admissible for optimal solution |
+| **Edge Reweighting** | Makes all edges non-negative | Used in Johnson's algorithm |
+| **Path Reconstruction** | Tracks predecessors for each vertex | Allows backtracking from destination to source |
+| **Early Termination** | Stops when target is found | Applicable when only interested in a specific path |
+| **Bidirectional Search** | Searches from both ends simultaneously | Significantly reduces search space |
+
+> Understanding these shortest path algorithms and their applications empowers you to solve complex path-finding problems efficiently!

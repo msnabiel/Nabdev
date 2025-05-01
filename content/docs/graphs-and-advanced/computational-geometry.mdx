@@ -1,0 +1,697 @@
+---
+title: Computational Geometry
+description: Master algorithms for working with geometric structures, including points, lines, convex hulls, line intersections, polygon operations, and Voronoi diagrams.
+---
+
+Computational geometry focuses on designing algorithms and data structures for solving geometric problems. Let's explore essential concepts, implementations, and powerful techniques for geometric calculations.
+
+## 1. Basics & Structures
+
+The foundation of computational geometry starts with representing basic geometric entities.
+
+```cpp
+// Point structure - the most basic geometric entity
+struct Point {
+    double x, y;
+
+    Point(double _x = 0, double _y = 0) : x(_x), y(_y) {}
+
+    // Vector addition and subtraction
+    Point operator+(const Point& p) const { return Point(x + p.x, y + p.y); }
+    Point operator-(const Point& p) const { return Point(x - p.x, y - p.y); }
+
+    // Scalar multiplication
+    Point operator*(double c) const { return Point(x * c, y * c); }
+
+    // Dot product
+    double dot(const Point& p) const { return x * p.x + y * p.y; }
+
+    // Cross product magnitude
+    double cross(const Point& p) const { return x * p.y - y * p.x; }
+
+    // Euclidean distance to another point
+    double dist(const Point& p) const {
+        return sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y));
+    }
+
+    // Square of distance (avoiding square root for comparisons)
+    double sqDist(const Point& p) const {
+        return (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y);
+    }
+
+    // Magnitude (length) of the vector
+    double mag() const { return sqrt(x * x + y * y); }
+
+    // Equality operator with epsilon for floating-point comparison
+    bool operator==(const Point& p) const {
+        const double EPS = 1e-9;
+        return fabs(x - p.x) < EPS && fabs(y - p.y) < EPS;
+    }
+};
+```
+
+## 2. Vector Operations & Utility Functions
+
+### Vector operations
+Essential vector and geometric operations that form the building blocks of more complex algorithms.
+
+```cpp
+// Determine if three points make a left turn
+bool isLeftTurn(const Point& a, const Point& b, const Point& c) {
+    return (b - a).cross(c - a) > 0;
+}
+
+// Determine if three points make a right turn
+bool isRightTurn(const Point& a, const Point& b, const Point& c) {
+    return (b - a).cross(c - a) < 0;
+}
+
+// Check if three points are collinear (lie on the same line)
+bool isCollinear(const Point& a, const Point& b, const Point& c) {
+    const double EPS = 1e-9;
+    return fabs((b - a).cross(c - a)) < EPS;
+}
+
+// Angle between three points (angle at point b)
+double angle(const Point& a, const Point& b, const Point& c) {
+    Point ba = a - b;
+    Point bc = c - b;
+    return acos(ba.dot(bc) / (ba.mag() * bc.mag()));
+}
+
+// Calculate the area of a triangle formed by three points
+double triangleArea(const Point& a, const Point& b, const Point& c) {
+    return fabs((b - a).cross(c - a)) / 2.0;
+}
+
+// Check if point p lies inside the triangle formed by a, b, c
+bool pointInTriangle(const Point& p, const Point& a, const Point& b, const Point& c) {
+    // Calculate areas
+    double areaABC = triangleArea(a, b, c);
+    double areaPBC = triangleArea(p, b, c);
+    double areaPAC = triangleArea(p, a, c);
+    double areaPAB = triangleArea(p, a, b);
+
+    // Check if sum of sub-triangle areas equals the original triangle area
+    const double EPS = 1e-9;
+    return fabs(areaABC - (areaPBC + areaPAC + areaPAB)) < EPS;
+}
+```
+
+## 3. Line Segment Intersection
+
+Detecting whether two line segments intersect is a fundamental problem in computational geometry.
+
+```cpp
+// Line segment structure
+struct Segment {
+    Point p1, p2;
+    Segment(const Point& _p1, const Point& _p2) : p1(_p1), p2(_p2) {}
+};
+
+// Check if two segments intersect
+bool segmentsIntersect(const Segment& s1, const Segment& s2) {
+    Point a = s1.p1, b = s1.p2;
+    Point c = s2.p1, d = s2.p2;
+
+    // Calculate orientations
+    double o1 = (b - a).cross(c - a);
+    double o2 = (b - a).cross(d - a);
+    double o3 = (d - c).cross(a - c);
+    double o4 = (d - c).cross(b - c);
+
+    // General case: segments intersect if orientations are opposite
+    if (o1 * o2 < 0 && o3 * o4 < 0) return true;
+
+    // Special cases: check for collinearity and endpoint overlaps
+    const double EPS = 1e-9;
+    if (fabs(o1) < EPS && pointOnSegment(c, a, b)) return true;
+    if (fabs(o2) < EPS && pointOnSegment(d, a, b)) return true;
+    if (fabs(o3) < EPS && pointOnSegment(a, c, d)) return true;
+    if (fabs(o4) < EPS && pointOnSegment(b, c, d)) return true;
+
+    return false;
+}
+
+// Check if point p lies on segment defined by points a and b
+bool pointOnSegment(const Point& p, const Point& a, const Point& b) {
+    const double EPS = 1e-9;
+
+    // Check if p is collinear with segment ab
+    if (fabs((p - a).cross(b - a)) > EPS) return false;
+
+    // Check if p is within the bounding box of segment ab
+    if (p.x < min(a.x, b.x) - EPS || p.x > max(a.x, b.x) + EPS) return false;
+    if (p.y < min(a.y, b.y) - EPS || p.y > max(a.y, b.y) + EPS) return false;
+
+    return true;
+}
+
+// Find the intersection point of two non-parallel segments
+Point segmentIntersection(const Segment& s1, const Segment& s2) {
+    Point a = s1.p1, b = s1.p2;
+    Point c = s2.p1, d = s2.p2;
+
+    // Calculate parameters for the intersection formula
+    double a1 = b.y - a.y;
+    double b1 = a.x - b.x;
+    double c1 = a1 * a.x + b1 * a.y;
+
+    double a2 = d.y - c.y;
+    double b2 = c.x - d.x;
+    double c2 = a2 * c.x + b2 * c.y;
+
+    double determinant = a1 * b2 - a2 * b1;
+
+    // Check if lines are parallel (determinant close to 0)
+    const double EPS = 1e-9;
+    if (fabs(determinant) < EPS) {
+        // Handle parallel case or return a sentinel value
+        return Point(NAN, NAN);
+    }
+
+    // Calculate intersection point
+    double x = (b2 * c1 - b1 * c2) / determinant;
+    double y = (a1 * c2 - a2 * c1) / determinant;
+
+    return Point(x, y);
+}
+```
+
+## 4. Convex Hull (Graham Scan Algorithm)
+
+The convex hull is the smallest convex polygon that contains all given points. The Graham scan is an efficient method to compute it.
+
+```cpp
+// Compute the convex hull using Graham scan algorithm
+std::vector<Point> grahamScan(std::vector<Point> points) {
+    if (points.size() <= 2) return points;
+
+    // Find the lowest point (and leftmost if tie)
+    int lowestIdx = 0;
+    for (int i = 1; i < points.size(); i++) {
+        if (points[i].y < points[lowestIdx].y ||
+            (points[i].y == points[lowestIdx].y && points[i].x < points[lowestIdx].x)) {
+            lowestIdx = i;
+        }
+    }
+
+    // Move the lowest point to position 0
+    std::swap(points[0], points[lowestIdx]);
+
+    // Sort the rest of the points by polar angle with respect to the lowest point
+    Point pivot = points[0];
+    std::sort(points.begin() + 1, points.end(), [&pivot](const Point& a, const Point& b) {
+        double cross = (a - pivot).cross(b - pivot);
+        if (fabs(cross) < 1e-9) {
+            // If collinear, sort by distance to pivot
+            return pivot.sqDist(a) < pivot.sqDist(b);
+        }
+        return cross > 0;
+    });
+
+    // Build the convex hull
+    std::vector<Point> hull;
+    hull.push_back(points[0]);
+    hull.push_back(points[1]);
+
+    for (int i = 2; i < points.size(); i++) {
+        while (hull.size() >= 2 && !isLeftTurn(hull[hull.size()-2], hull.back(), points[i])) {
+            hull.pop_back();
+        }
+        hull.push_back(points[i]);
+    }
+
+    return hull;
+}
+```
+
+**Explanation**
+- We first find the lowest point (with smallest y-coordinate) as our starting point
+- We sort all other points by polar angle around this starting point
+- We build the hull by adding points one by one, removing points that would create a non-left turn
+- Time complexity: **O(n log n)** for the sorting step, where n is the number of points
+- Space complexity: **O(n)** for storing the hull points
+
+## 5. Point in Polygon Check
+
+Determines if a point is inside, outside, or on the boundary of a polygon.
+
+```cpp
+// Check if a point is inside a polygon using ray casting algorithm
+// Returns:  1 for inside
+//           0 for on the boundary
+//          -1 for outside
+int pointInPolygon(const Point& p, const std::vector<Point>& polygon) {
+    int n = polygon.size();
+    if (n < 3) return -1; // Not a polygon
+
+    bool onSegment = false;
+    int windingNumber = 0; // winding number counter
+
+    for (int i = 0; i < n; i++) {
+        // Check if point is on any polygon segment
+        if (pointOnSegment(p, polygon[i], polygon[(i+1)%n])) {
+            return 0; // On boundary
+        }
+
+        // Check if ray from point crosses this edge
+        if (polygon[i].y <= p.y) {
+            if (polygon[(i+1)%n].y > p.y &&
+                isLeftTurn(polygon[i], polygon[(i+1)%n], p)) {
+                windingNumber++;
+            }
+        } else {
+            if (polygon[(i+1)%n].y <= p.y &&
+                isRightTurn(polygon[i], polygon[(i+1)%n], p)) {
+                windingNumber--;
+            }
+        }
+    }
+
+    return windingNumber != 0 ? 1 : -1;
+}
+```
+
+**Explanation**
+- The algorithm uses the winding number method to determine if a point is inside a polygon
+- It casts a ray from the point and counts how many times it intersects polygon edges
+- If winding number is non-zero, the point is inside; if zero, the point is outside
+- We also check if the point lies exactly on any edge of the polygon
+- Time complexity: **O(n)** where n is the number of vertices in the polygon
+
+## 6. Polygon Area and Centroid
+
+Calculates the area and centroid of a simple polygon.
+
+```cpp
+// Calculate the signed area of a polygon
+double polygonArea(const std::vector<Point>& polygon) {
+    int n = polygon.size();
+    double area = 0.0;
+
+    for (int i = 0; i < n; i++) {
+        int j = (i + 1) % n;
+        area += polygon[i].cross(polygon[j]);
+    }
+
+    return fabs(area) / 2.0;
+}
+
+// Calculate the centroid of a simple polygon
+Point polygonCentroid(const std::vector<Point>& polygon) {
+    int n = polygon.size();
+    Point centroid(0, 0);
+    double signedArea = 0.0;
+
+    for (int i = 0; i < n; i++) {
+        int j = (i + 1) % n;
+        double cross = polygon[i].cross(polygon[j]);
+        signedArea += cross;
+
+        centroid.x += (polygon[i].x + polygon[j].x) * cross;
+        centroid.y += (polygon[i].y + polygon[j].y) * cross;
+    }
+
+    signedArea = signedArea / 2.0;
+    centroid.x /= (6.0 * signedArea);
+    centroid.y /= (6.0 * signedArea);
+
+    return centroid;
+}
+```
+
+## 7. Closest Pair of Points (Divide and Conquer)
+
+Finding the closest pair of points in a set efficiently using divide and conquer.
+
+```cpp
+// Find the distance between the closest pair of points using divide and conquer
+double closestPairDistance(std::vector<Point>& points) {
+    // Sort points by x-coordinate
+    std::sort(points.begin(), points.end(), [](const Point& a, const Point& b) {
+        return a.x < b.x;
+    });
+
+    return closestPairRecursive(points, 0, points.size() - 1);
+}
+
+// Recursive function to find closest pair distance
+double closestPairRecursive(std::vector<Point>& points, int start, int end) {
+    // Base cases
+    if (end - start <= 2) {
+        double minDist = DBL_MAX;
+        for (int i = start; i <= end; i++) {
+            for (int j = i + 1; j <= end; j++) {
+                minDist = std::min(minDist, points[i].dist(points[j]));
+            }
+        }
+        return minDist;
+    }
+
+    // Divide points into two halves
+    int mid = (start + end) / 2;
+    double midX = points[mid].x;
+
+    // Recursively find minimum distances in left and right halves
+    double leftMin = closestPairRecursive(points, start, mid);
+    double rightMin = closestPairRecursive(points, mid + 1, end);
+    double minDist = std::min(leftMin, rightMin);
+
+    // Collect points that are within minDist of the dividing line
+    std::vector<Point> strip;
+    for (int i = start; i <= end; i++) {
+        if (fabs(points[i].x - midX) < minDist) {
+            strip.push_back(points[i]);
+        }
+    }
+
+    // Sort strip by y-coordinate
+    std::sort(strip.begin(), strip.end(), [](const Point& a, const Point& b) {
+        return a.y < b.y;
+    });
+
+    // Find minimum distance in the strip
+    for (int i = 0; i < strip.size(); i++) {
+        for (int j = i + 1; j < strip.size() && strip[j].y - strip[i].y < minDist; j++) {
+            minDist = std::min(minDist, strip[i].dist(strip[j]));
+        }
+    }
+
+    return minDist;
+}
+```
+
+**Explanation**
+- The algorithm uses divide and conquer to efficiently find the closest pair of points
+- We first sort points by x-coordinate and recursively find minimum distances in left and right halves
+- We then consider points that are close to the dividing line, as the closest pair might span the line
+- Time complexity: **O(n log n)** where n is the number of points
+- Space complexity: **O(n)** for storing the points
+
+## 8. Line Sweep Algorithm for Multiple Line Intersections
+
+Finding all intersections among a set of line segments using a line sweep algorithm.
+
+```cpp
+// Event types for the line sweep algorithm
+enum EventType { SEGMENT_START, SEGMENT_END, INTERSECTION };
+
+// Event structure for the line sweep algorithm
+struct Event {
+    Point point;         // Event point
+    EventType type;      // Event type
+    int segmentIndex1;   // First segment index
+    int segmentIndex2;   // Second segment index (for intersections)
+
+    Event(const Point& p, EventType t, int s1, int s2 = -1)
+        : point(p), type(t), segmentIndex1(s1), segmentIndex2(s2) {}
+
+    // Compare events by x-coordinate
+    bool operator<(const Event& other) const {
+        if (fabs(point.x - other.point.x) > 1e-9)
+            return point.x < other.point.x;
+        if (type != other.type)
+            return type < other.type;
+        return point.y < other.point.y;
+    }
+};
+
+// Find all intersections among a set of line segments
+std::vector<Point> findAllIntersections(const std::vector<Segment>& segments) {
+    std::vector<Point> intersections;
+    std::vector<Event> events;
+
+    // Create start and end events for each segment
+    for (int i = 0; i < segments.size(); i++) {
+        Point left = segments[i].p1;
+        Point right = segments[i].p2;
+
+        // Ensure left point is before right point by x-coordinate
+        if (left.x > right.x || (fabs(left.x - right.x) < 1e-9 && left.y > right.y)) {
+            std::swap(left, right);
+        }
+
+        events.push_back(Event(left, SEGMENT_START, i));
+        events.push_back(Event(right, SEGMENT_END, i));
+    }
+
+    // Sort events by x-coordinate
+    std::sort(events.begin(), events.end());
+
+    // Active segments (those intersecting the sweep line)
+    std::set<int> active;
+
+    for (const Event& event : events) {
+        if (event.type == SEGMENT_START) {
+            // Add new segment to active set
+            int currentSegment = event.segmentIndex1;
+
+            // Check for intersections with all active segments
+            for (int activeSegment : active) {
+                if (segmentsIntersect(segments[currentSegment], segments[activeSegment])) {
+                    Point intersection = segmentIntersection(segments[currentSegment], segments[activeSegment]);
+                    if (!std::isnan(intersection.x)) {
+                        intersections.push_back(intersection);
+                    }
+                }
+            }
+
+            active.insert(currentSegment);
+        }
+        else if (event.type == SEGMENT_END) {
+            // Remove segment from active set
+            active.erase(event.segmentIndex1);
+        }
+    }
+
+    // Remove duplicate intersections
+    std::sort(intersections.begin(), intersections.end(), [](const Point& a, const Point& b) {
+        if (fabs(a.x - b.x) > 1e-9) return a.x < b.x;
+        return a.y < b.y;
+    });
+
+    intersections.erase(
+        std::unique(intersections.begin(), intersections.end(),
+                   [](const Point& a, const Point& b) {
+                       return fabs(a.x - b.x) < 1e-9 && fabs(a.y - b.y) < 1e-9;
+                   }),
+        intersections.end()
+    );
+
+    return intersections;
+}
+```
+
+## 9. Delaunay Triangulation and Voronoi Diagrams
+
+A brief implementation of the incremental algorithm for Delaunay triangulation, which is the dual of the Voronoi diagram.
+
+```cpp
+// Triangle structure for Delaunay triangulation
+struct Triangle {
+    Point p1, p2, p3;
+
+    Triangle(const Point& _p1, const Point& _p2, const Point& _p3)
+        : p1(_p1), p2(_p2), p3(_p3) {}
+
+    // Check if a point is inside the circumcircle of this triangle
+    bool circumCircleContains(const Point& p) const {
+        // Calculate the determinant to check if point is in circumcircle
+        double a = p1.x - p.x;
+        double b = p1.y - p.y;
+        double c = a*a + b*b;
+
+        double d = p2.x - p.x;
+        double e = p2.y - p.y;
+        double f = d*d + e*e;
+
+        double g = p3.x - p.x;
+        double h = p3.y - p.y;
+        double i = g*g + h*h;
+
+        return a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g) > 0;
+    }
+};
+
+// Simplified incremental Delaunay triangulation algorithm
+std::vector<Triangle> delaunayTriangulation(std::vector<Point> points) {
+    if (points.size() < 3) return {};
+
+    // Add super-triangle that contains all points
+    double maxX = points[0].x, maxY = points[0].y;
+    double minX = maxX, minY = maxY;
+
+    for (const Point& p : points) {
+        minX = std::min(minX, p.x);
+        minY = std::min(minY, p.y);
+        maxX = std::max(maxX, p.x);
+        maxY = std::max(maxY, p.y);
+    }
+
+    double dx = maxX - minX;
+    double dy = maxY - minY;
+    double dmax = std::max(dx, dy);
+    double xmid = (minX + maxX) / 2;
+    double ymid = (minY + maxY) / 2;
+
+    Point p1(xmid - 20 * dmax, ymid - dmax);
+    Point p2(xmid, ymid + 20 * dmax);
+    Point p3(xmid + 20 * dmax, ymid - dmax);
+
+    std::vector<Triangle> triangles;
+    triangles.push_back(Triangle(p1, p2, p3));
+
+    // Add points one by one
+    for (const Point& p : points) {
+        std::vector<Triangle> badTriangles;
+
+        // Find all triangles whose circumcircle contains the point
+        for (const Triangle& t : triangles) {
+            if (t.circumCircleContains(p)) {
+                badTriangles.push_back(t);
+            }
+        }
+
+        // Find boundary of the polygonal hole
+        std::vector<std::pair<Point, Point>> polygon;
+
+        for (const Triangle& t : badTriangles) {
+            std::pair<Point, Point> edge1(t.p1, t.p2);
+            std::pair<Point, Point> edge2(t.p2, t.p3);
+            std::pair<Point, Point> edge3(t.p3, t.p1);
+
+            auto isSharedEdge = [&badTriangles](const std::pair<Point, Point>& edge) {
+                int count = 0;
+                for (const Triangle& t : badTriangles) {
+                    if ((t.p1 == edge.first && t.p2 == edge.second) ||
+                        (t.p2 == edge.first && t.p3 == edge.second) ||
+                        (t.p3 == edge.first && t.p1 == edge.second) ||
+                        (t.p1 == edge.second && t.p2 == edge.first) ||
+                        (t.p2 == edge.second && t.p3 == edge.first) ||
+                        (t.p3 == edge.second && t.p1 == edge.first)) {
+                        count++;
+                    }
+                }
+                return count == 1; // Edge is not shared with any other triangle
+            };
+
+            if (isSharedEdge(edge1)) polygon.push_back(edge1);
+            if (isSharedEdge(edge2)) polygon.push_back(edge2);
+            if (isSharedEdge(edge3)) polygon.push_back(edge3);
+        }
+
+        // Remove bad triangles
+        triangles.erase(
+            std::remove_if(triangles.begin(), triangles.end(),
+                          [&badTriangles](const Triangle& t) {
+                              return std::find(badTriangles.begin(), badTriangles.end(), t) != badTriangles.end();
+                          }),
+            triangles.end()
+        );
+
+        // Create new triangles from the point and the polygon edges
+        for (const auto& edge : polygon) {
+            triangles.push_back(Triangle(edge.first, edge.second, p));
+        }
+    }
+
+    // Remove triangles that share a vertex with the super-triangle
+    triangles.erase(
+        std::remove_if(triangles.begin(), triangles.end(),
+                      [&p1, &p2, &p3](const Triangle& t) {
+                          return t.p1 == p1 || t.p1 == p2 || t.p1 == p3 ||
+                                 t.p2 == p1 || t.p2 == p2 || t.p2 == p3 ||
+                                 t.p3 == p1 || t.p3 == p2 || t.p3 == p3;
+                      }),
+        triangles.end()
+    );
+
+    return triangles;
+}
+
+// Function to compute the Voronoi diagram from Delaunay triangulation
+std::vector<Point> voronoiVertices(const std::vector<Triangle>& triangulation) {
+    std::vector<Point> vertices;
+
+    for (const Triangle& t : triangulation) {
+        // Calculate circumcenter of each triangle
+        double D = 2 * (t.p1.x * (t.p2.y - t.p3.y) +
+                        t.p2.x * (t.p3.y - t.p1.y) +
+                        t.p3.x * (t.p1.y - t.p2.y));
+
+        double Ux = ((t.p1.x*t.p1.x + t.p1.y*t.p1.y) * (t.p2.y - t.p3.y) +
+                    (t.p2.x*t.p2.x + t.p2.y*t.p2.y) * (t.p3.y - t.p1.y) +
+                    (t.p3.x*t.p3.x + t.p3.y*t.p3.y) * (t.p1.y - t.p2.y)) / D;
+
+        double Uy = ((t.p1.x*t.p1.x + t.p1.y*t.p1.y) * (t.p3.x - t.p2.x) +
+                    (t.p2.x*t.p2.x + t.p2.y*t.p2.y) * (t.p1.x - t.p3.x) +
+                    (t.p3.x*t.p3.x + t.p3.y*t.p3.y) * (t.p2.x - t.p1.x)) / D;
+
+        vertices.push_back(Point(Ux, Uy));
+    }
+
+    return vertices;
+}
+```
+
+## 10. Extensions and Applications
+
+### Computational Geometry in Robotics
+- Path Planning: Finding the shortest path avoiding obstacles
+- Visibility Graphs: Determining visible areas from a point
+- Motion Planning: Computing collision-free paths
+
+```cpp
+// Simple visibility graph implementation (partial)
+std::vector<std::pair<Point, Point>> buildVisibilityGraph(
+    const Point& start,
+    const Point& end,
+    const std::vector<std::vector<Point>>& obstacles) {
+
+    std::vector<std::pair<Point, Point>> visibilityEdges;
+    std::vector<Point> vertices = {start, end};
+
+    // Collect all vertices from obstacles
+    for (const auto& polygon : obstacles) {
+        vertices.insert(vertices.end(), polygon.begin(), polygon.end());
+    }
+
+    // Check visibility between each pair of vertices
+    for (int i = 0; i < vertices.size(); i++) {
+        for (int j = i + 1; j < vertices.size(); j++) {
+            // Skip if vertices are adjacent in the same obstacle
+            bool areAdjacent = false;
+            for (const auto& polygon : obstacles) {
+                for (int k = 0; k < polygon.size(); k++) {
+                    int next = (k + 1) % polygon.size();
+                    if ((vertices[i] == polygon[k] && vertices[j] == polygon[next]) ||
+                        (vertices[j] == polygon[k] && vertices[i] == polygon[next])) {
+                        areAdjacent = true;
+                        break;
+                    }
+                }
+                if (areAdjacent) break;
+            }
+
+            if (areAdjacent) {
+                visibilityEdges.push_back({vertices[i], vertices[j]});
+                continue;
+            }
+
+            // Check if line segment is visible (doesn't intersect any obstacle edge)
+            Segment candidateEdge(vertices[i], vertices[j]);
+            bool isVisible = true;
+
+            for (const auto& polygon : obstacles) {
+                for (int k = 0; k < polygon.size(); k++) {
+                    Segment obstacleEdge(polygon[k], polygon[(k + 1) % polygon.size()]);
+
+                    // Skip if this edge contains either vertex
+                    if (pointOnSegment(vertices[i], obstacleEdge.p1, obstacleEdge.p2) ||
+                        pointOnSegment(vertices[j], obstacleEdge.p1, obstacleEdge.p2)) {
+                        continue;
+                    }
+
+                    if (segmentsIntersect(candidateEdge, obstacleEdge)) {
+                      ```

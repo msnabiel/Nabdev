@@ -1,0 +1,1395 @@
+---
+title: Network Flow Algorithms
+description: Master network flow algorithms including Ford-Fulkerson, Edmonds-Karp, Dinic's, Push-Relabel, and Min-Cost Max-Flow with optimized implementations, complexity analysis, and real-world applications.
+---
+
+Network flow algorithms are powerful techniques for solving a wide range of problems involving flow in networks, from transportation and communication systems to resource allocation and matching problems. This guide explores the most important network flow algorithms with detailed implementations and analysis.
+
+## 1. Basic Concepts
+
+### Flow Network Structure
+
+A flow network is a directed graph where each edge has a capacity and a flow value.
+
+```cpp
+#include <vector>
+#include <limits>
+using namespace std;
+
+struct Edge {
+    int to;          // Target vertex
+    int capacity;    // Maximum flow capacity
+    int flow;        // Current flow
+    int residual;    // Residual capacity (capacity - flow)
+    int rev;         // Index of reverse edge in adjacency list
+
+    Edge(int t, int c, int f, int r) :
+        to(t), capacity(c), flow(f), residual(c - f), rev(r) {}
+};
+
+// Graph representation using adjacency list
+class FlowNetwork {
+private:
+    int V;                      // Number of vertices
+    vector<vector<Edge>> adj;   // Adjacency list
+
+public:
+    FlowNetwork(int vertices) : V(vertices), adj(vertices) {}
+
+    // Add an edge from u to v with capacity c
+    void addEdge(int u, int v, int c) {
+        // Forward edge: u -> v
+        Edge forward(v, c, 0, adj[v].size());
+
+        // Reverse edge: v -> u (for residual network)
+        Edge backward(u, 0, 0, adj[u].size());
+
+        adj[u].push_back(forward);
+        adj[v].push_back(backward);
+    }
+};
+```
+
+### Key Terms
+
+- **Source (s)**: The vertex from which flow originates.
+- **Sink (t)**: The vertex to which flow is directed.
+- **Capacity**: Maximum amount of flow that can pass through an edge.
+- **Flow**: Current amount passing through an edge (0 ≤ flow ≤ capacity).
+- **Residual capacity**: Remaining unused capacity (capacity - flow).
+- **Augmenting path**: A path from source to sink through which more flow can be sent.
+- **Residual network**: Graph showing remaining capacity that can be used.
+- **Cut**: A partition of vertices into two disjoint subsets S and T, where s ∈ S and t ∈ T.
+- **Max Flow Min Cut Theorem**: The maximum flow value equals the minimum capacity of any s-t cut.
+
+## 2. Ford-Fulkerson Algorithm
+
+The Ford-Fulkerson algorithm is a greedy approach that repeatedly finds augmenting paths and increases flow until no more augmenting paths exist.
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <limits>
+using namespace std;
+
+class FordFulkerson {
+private:
+    int V;  // Number of vertices
+    vector<vector<int>> residualGraph;  // Residual graph
+
+    // DFS to find augmenting path
+    bool dfs(int s, int t, vector<int>& parent) {
+        vector<bool> visited(V, false);
+        stack<int> stack;
+        stack.push(s);
+        visited[s] = true;
+        parent[s] = -1;
+
+        while (!stack.empty()) {
+            int u = stack.top();
+            stack.pop();
+
+            for (int v = 0; v < V; v++) {
+                if (!visited[v] && residualGraph[u][v] > 0) {
+                    stack.push(v);
+                    parent[v] = u;
+                    visited[v] = true;
+
+                    if (v == t)
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
+public:
+    FordFulkerson(int vertices) : V(vertices) {
+        // Initialize residual graph
+        residualGraph.resize(V, vector<int>(V, 0));
+    }
+
+    // Add edge with capacity to original graph
+    void addEdge(int u, int v, int capacity) {
+        residualGraph[u][v] = capacity;
+    }
+
+    // Find maximum flow from s to t
+    int maxFlow(int s, int t) {
+        int maxFlow = 0;
+        vector<int> parent(V);
+
+        // While there is an augmenting path
+        while (dfs(s, t, parent)) {
+            // Find minimum residual capacity along the augmenting path
+            int pathFlow = numeric_limits<int>::max();
+            for (int v = t; v != s; v = parent[v]) {
+                int u = parent[v];
+                pathFlow = min(pathFlow, residualGraph[u][v]);
+            }
+
+            // Update residual capacities and reverse edges
+            for (int v = t; v != s; v = parent[v]) {
+                int u = parent[v];
+                residualGraph[u][v] -= pathFlow;  // Forward edge
+                residualGraph[v][u] += pathFlow;  // Reverse edge
+            }
+
+            maxFlow += pathFlow;
+        }
+
+        return maxFlow;
+    }
+};
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(E × max_flow), where E is the number of edges and max_flow is the maximum flow value. In the worst case, this could be very inefficient.
+- **Space Complexity**: O(V²) for the residual graph representation.
+
+### Key Points
+
+- Uses depth-first or breadth-first search to find augmenting paths.
+- Works by repeatedly finding augmenting paths and increasing flow along them.
+- Implementation can be optimized by using adjacency lists instead of adjacency matrix.
+- Time complexity depends on the search strategy and can be improved with optimizations.
+
+## 3. Edmonds-Karp Algorithm
+
+Edmonds-Karp is an implementation of Ford-Fulkerson that uses breadth-first search to find the shortest augmenting path, improving time complexity.
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <limits>
+using namespace std;
+
+class EdmondsKarp {
+private:
+    int V;  // Number of vertices
+    vector<vector<int>> capacity; // Capacity matrix
+    vector<vector<int>> flow;     // Flow matrix
+
+    // Find augmenting path using BFS
+    bool bfs(int s, int t, vector<int>& parent) {
+        fill(parent.begin(), parent.end(), -1);
+        parent[s] = -2;  // Mark source as visited
+
+        queue<pair<int, int>> q;  // (vertex, min_capacity)
+        q.push({s, numeric_limits<int>::max()});
+
+        while (!q.empty()) {
+            int u = q.front().first;
+            int min_capacity = q.front().second;
+            q.pop();
+
+            for (int v = 0; v < V; v++) {
+                // If residual capacity exists and v is not visited
+                if (parent[v] == -1 && capacity[u][v] - flow[u][v] > 0) {
+                    parent[v] = u;
+                    int new_min = min(min_capacity, capacity[u][v] - flow[u][v]);
+
+                    if (v == t) return new_min;  // Return min capacity of path
+
+                    q.push({v, new_min});
+                }
+            }
+        }
+        return 0;  // No augmenting path found
+    }
+
+public:
+    EdmondsKarp(int vertices) : V(vertices) {
+        capacity.resize(V, vector<int>(V, 0));
+        flow.resize(V, vector<int>(V, 0));
+    }
+
+    void addEdge(int u, int v, int c) {
+        capacity[u][v] = c;
+    }
+
+    int maxFlow(int s, int t) {
+        vector<int> parent(V, -1);
+        int maxFlow = 0;
+
+        // While there's an augmenting path, add flow
+        int new_flow;
+        while ((new_flow = bfs(s, t, parent))) {
+            maxFlow += new_flow;
+
+            // Update flow along the path
+            int v = t;
+            while (v != s) {
+                int u = parent[v];
+                flow[u][v] += new_flow;
+                flow[v][u] -= new_flow;  // Update reverse edge
+                v = u;
+            }
+        }
+
+        return maxFlow;
+    }
+};
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(V × E²), where V is the number of vertices and E is the number of edges.
+- **Space Complexity**: O(V²) for the capacity and flow matrices.
+
+### Key Points
+
+- Uses BFS to find the shortest augmenting path (in terms of number of edges).
+- This guarantees the number of augmenting paths is at most O(V × E).
+- Returns the correct maximum flow regardless of the order of edge examination.
+- Often more efficient in practice than the basic Ford-Fulkerson implementation.
+
+## 4. Dinic's Algorithm
+
+Dinic's algorithm improves on Edmonds-Karp by using level graphs and blocking flows, making it more efficient for large networks.
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <limits>
+using namespace std;
+
+class Dinic {
+private:
+    struct Edge {
+        int to, rev;
+        int capacity, flow;
+        Edge(int t, int r, int c, int f) : to(t), rev(r), capacity(c), flow(f) {}
+    };
+
+    int V;
+    vector<vector<Edge>> adj;
+    vector<int> level, ptr;
+
+    // Construct level graph using BFS
+    bool bfs(int s, int t) {
+        fill(level.begin(), level.end(), -1);
+        level[s] = 0;
+
+        queue<int> q;
+        q.push(s);
+
+        while (!q.empty() && level[t] == -1) {
+            int u = q.front();
+            q.pop();
+
+            for (auto& e : adj[u]) {
+                if (level[e.to] == -1 && e.capacity - e.flow > 0) {
+                    level[e.to] = level[u] + 1;
+                    q.push(e.to);
+                }
+            }
+        }
+
+        return level[t] != -1;
+    }
+
+    // Find blocking flow using DFS
+    int dfs(int u, int t, int flow) {
+        if (u == t || flow == 0) return flow;
+
+        for (int& i = ptr[u]; i < (int)adj[u].size(); i++) {
+            Edge& e = adj[u][i];
+
+            if (level[e.to] == level[u] + 1 && e.capacity - e.flow > 0) {
+                int curr_flow = min(flow, e.capacity - e.flow);
+                int temp_flow = dfs(e.to, t, curr_flow);
+
+                if (temp_flow > 0) {
+                    e.flow += temp_flow;
+                    adj[e.to][e.rev].flow -= temp_flow;
+                    return temp_flow;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+public:
+    Dinic(int vertices) : V(vertices) {
+        adj.resize(V);
+        level.resize(V);
+        ptr.resize(V);
+    }
+
+    void addEdge(int u, int v, int c) {
+        // Forward edge
+        adj[u].push_back(Edge(v, adj[v].size(), c, 0));
+        // Reverse edge (for residual graph)
+        adj[v].push_back(Edge(u, adj[u].size() - 1, 0, 0));
+    }
+
+    int maxFlow(int s, int t) {
+        int total_flow = 0;
+
+        // While augmenting paths exist in the level graph
+        while (bfs(s, t)) {
+            fill(ptr.begin(), ptr.end(), 0);
+
+            // Find blocking flow
+            int flow;
+            while ((flow = dfs(s, t, numeric_limits<int>::max())) > 0) {
+                total_flow += flow;
+            }
+        }
+
+        return total_flow;
+    }
+};
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(V² × E), which is better than Edmonds-Karp for most graphs.
+- **Space Complexity**: O(V + E) using adjacency list.
+
+### Key Points
+
+- Uses level graphs to ensure the algorithm makes progress in each phase.
+- The blocking flow ensures that all augmenting paths of the same length are discovered.
+- Each phase increases the length of the shortest augmenting path.
+- Significantly faster than Edmonds-Karp for large networks.
+
+## 5. Push-Relabel Algorithm
+
+Push-Relabel maintains a preflow (which may violate flow conservation) and gradually converts it to a valid flow by pushing flow from vertices with excess to neighboring vertices.
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+using namespace std;
+
+class PushRelabel {
+private:
+    int V;
+    vector<vector<int>> capacity;
+    vector<vector<int>> flow;
+    vector<int> height;
+    vector<int> excess;
+
+    void push(int u, int v) {
+        int d = min(excess[u], capacity[u][v] - flow[u][v]);
+        flow[u][v] += d;
+        flow[v][u] -= d;
+        excess[u] -= d;
+        excess[v] += d;
+    }
+
+    void relabel(int u) {
+        int min_height = numeric_limits<int>::max();
+        for (int v = 0; v < V; v++) {
+            if (capacity[u][v] - flow[u][v] > 0) {
+                min_height = min(min_height, height[v]);
+            }
+        }
+        if (min_height < numeric_limits<int>::max()) {
+            height[u] = min_height + 1;
+        }
+    }
+
+    void discharge(int u) {
+        while (excess[u] > 0) {
+            static int current[1000]; // Assuming V <= 1000
+            if (current[u] < V) {
+                int v = current[u];
+                if (capacity[u][v] - flow[u][v] > 0 && height[u] > height[v]) {
+                    push(u, v);
+                } else {
+                    current[u]++;
+                }
+            } else {
+                relabel(u);
+                current[u] = 0;
+            }
+        }
+    }
+
+public:
+    PushRelabel(int vertices) : V(vertices) {
+        capacity.resize(V, vector<int>(V, 0));
+        flow.resize(V, vector<int>(V, 0));
+        height.resize(V, 0);
+        excess.resize(V, 0);
+    }
+
+    void addEdge(int u, int v, int c) {
+        capacity[u][v] = c;
+    }
+
+    int maxFlow(int s, int t) {
+        // Initialize preflow
+        height[s] = V;
+        for (int v = 0; v < V; v++) {
+            if (capacity[s][v] > 0) {
+                flow[s][v] = capacity[s][v];
+                flow[v][s] = -flow[s][v];
+                excess[v] = capacity[s][v];
+                excess[s] -= capacity[s][v];
+            }
+        }
+
+        // Create list of vertices for discharge operation
+        vector<int> vertices;
+        for (int i = 0; i < V; i++) {
+            if (i != s && i != t) {
+                vertices.push_back(i);
+            }
+        }
+
+        // Main loop
+        size_t i = 0;
+        while (i < vertices.size()) {
+            int u = vertices[i];
+            int old_height = height[u];
+            discharge(u);
+
+            if (height[u] > old_height) {
+                // Move u to the front
+                if (i > 0) {
+                    swap(vertices[i], vertices[0]);
+                    i = 0;
+                }
+            } else {
+                i++;
+            }
+        }
+
+        // Return the maximum flow
+        return excess[t];
+    }
+};
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(V² × E) for the basic implementation, but can be improved to O(V³) with optimizations.
+- **Space Complexity**: O(V²) using adjacency matrix.
+
+### Key Points
+
+- Works by pushing flow from vertices with excess to neighbors with lower height.
+- Maintains a height function to ensure flow moves towards the sink.
+- Local operations (push and relabel) make it suitable for parallel implementation.
+- Often performs better in practice than path-based algorithms.
+
+## 6. Min-Cost Max-Flow
+
+Min-Cost Max-Flow finds the maximum flow with minimum cost, useful when edges have both capacity and cost.
+
+### Implementation
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+#include <limits>
+using namespace std;
+
+class MinCostMaxFlow {
+private:
+    struct Edge {
+        int to, rev;
+        int capacity, flow;
+        int cost;
+        Edge(int t, int r, int c, int f, int cost_val) :
+            to(t), rev(r), capacity(c), flow(f), cost(cost_val) {}
+    };
+
+    int V;
+    vector<vector<Edge>> adj;
+    vector<int> dist, potential, parent, parent_edge;
+
+    // Find shortest path using Bellman-Ford
+    bool bellmanFord(int s, int t) {
+        fill(dist.begin(), dist.end(), numeric_limits<int>::max());
+        fill(parent.begin(), parent.end(), -1);
+        dist[s] = 0;
+
+        // Relax edges V-1 times
+        for (int i = 0; i < V - 1; i++) {
+            bool relaxed = false;
+            for (int u = 0; u < V; u++) {
+                if (dist[u] == numeric_limits<int>::max()) continue;
+
+                for (int j = 0; j < (int)adj[u].size(); j++) {
+                    Edge& e = adj[u][j];
+                    if (e.capacity - e.flow > 0 &&
+                        dist[u] + e.cost < dist[e.to]) {
+                        dist[e.to] = dist[u] + e.cost;
+                        parent[e.to] = u;
+                        parent_edge[e.to] = j;
+                        relaxed = true;
+                    }
+                }
+            }
+            if (!relaxed) break;
+        }
+
+        return dist[t] != numeric_limits<int>::max();
+    }
+
+    // Find shortest path using Dijkstra with potentials
+    bool dijkstra(int s, int t) {
+        fill(dist.begin(), dist.end(), numeric_limits<int>::max());
+        fill(parent.begin(), parent.end(), -1);
+
+        using pii = pair<int, int>; // (distance, vertex)
+        priority_queue<pii, vector<pii>, greater<pii>> pq;
+
+        dist[s] = 0;
+        pq.push({0, s});
+
+        while (!pq.empty()) {
+            int u = pq.top().second;
+            int d = pq.top().first;
+            pq.pop();
+
+            if (d > dist[u]) continue;
+
+            for (int j = 0; j < (int)adj[u].size(); j++) {
+                Edge& e = adj[u][j];
+
+                // Reduced cost with potential
+                int reduced_cost = e.cost + potential[u] - potential[e.to];
+
+                if (e.capacity - e.flow > 0 &&
+                    dist[u] + reduced_cost < dist[e.to]) {
+                    dist[e.to] = dist[u] + reduced_cost;
+                    parent[e.to] = u;
+                    parent_edge[e.to] = j;
+                    pq.push({dist[e.to], e.to});
+                }
+            }
+        }
+
+        // Update potentials
+        if (dist[t] != numeric_limits<int>::max()) {
+            for (int i = 0; i < V; i++) {
+                if (dist[i] != numeric_limits<int>::max()) {
+                    potential[i] += dist[i];
+                }
+            }
+        }
+
+        return dist[t] != numeric_limits<int>::max();
+    }
+
+public:
+    MinCostMaxFlow(int vertices) : V(vertices) {
+        adj.resize(V);
+        dist.resize(V);
+        potential.resize(V, 0);
+        parent.resize(V);
+        parent_edge.resize(V);
+    }
+
+    void addEdge(int u, int v, int capacity, int cost) {
+        adj[u].push_back(Edge(v, adj[v].size(), capacity, 0, cost));
+        adj[v].push_back(Edge(u, adj[u].size() - 1, 0, 0, -cost)); // Reverse edge
+    }
+
+    pair<int, int> minCostMaxFlow(int s, int t) {
+        int max_flow = 0;
+        int min_cost = 0;
+
+        // Initialize with Bellman-Ford to handle negative costs
+        while (bellmanFord(s, t)) {
+            // Find the minimum residual capacity along the path
+            int path_flow = numeric_limits<int>::max();
+            for (int v = t; v != s; v = parent[v]) {
+                int u = parent[v];
+                int j = parent_edge[v];
+                path_flow = min(path_flow, adj[u][j].capacity - adj[u][j].flow);
+            }
+
+            // Update flow and cost
+            max_flow += path_flow;
+            for (int v = t; v != s; v = parent[v]) {
+                int u = parent[v];
+                int j = parent_edge[v];
+                adj[u][j].flow += path_flow;
+                adj[v][adj[u][j].rev].flow -= path_flow;
+                min_cost += path_flow * adj[u][j].cost;
+            }
+        }
+
+        // Use Dijkstra for subsequent iterations (faster)
+        while (dijkstra(s, t)) {
+            int path_flow = numeric_limits<int>::max();
+            for (int v = t; v != s; v = parent[v]) {
+                int u = parent[v];
+                int j = parent_edge[v];
+                path_flow = min(path_flow, adj[u][j].capacity - adj[u][j].flow);
+            }
+
+            max_flow += path_flow;
+            for (int v = t; v != s; v = parent[v]) {
+                int u = parent[v];
+                int j = parent_edge[v];
+                adj[u][j].flow += path_flow;
+                adj[v][adj[u][j].rev].flow -= path_flow;
+                min_cost += path_flow * adj[u][j].cost;
+            }
+        }
+
+        return {max_flow, min_cost};
+    }
+};
+```
+
+### Time & Space Complexity
+
+- **Time Complexity**: O(V × E²) using Dijkstra with potentials.
+- **Space Complexity**: O(V + E) using adjacency list.
+
+### Key Points
+
+- Combines max flow with minimum cost consideration.
+- Uses potential functions to ensure non-negative costs for Dijkstra's algorithm.
+- Initial Bellman-Ford iteration handles negative costs.
+- Subsequent iterations use faster Dijkstra's algorithm with reduced costs.
+
+## 7. Applications and Problem Reductions
+
+### Bipartite Matching
+
+Maximum bipartite matching can be solved as a max flow problem by creating a flow network with source connected to all left vertices and sink connected to all right vertices.
+
+```cpp
+int bipartiteMatching(const vector<vector<int>>& graph, int leftSize, int rightSize) {
+    int n = leftSize + rightSize + 2;
+    int source = 0;
+    int sink = n - 1;
+
+    // Create a max flow solver
+    FordFulkerson ff(n);
+
+    // Connect source to all left vertices with capacity 1
+    for (int i = 1; i <= leftSize; i++) {
+        ff.addEdge(source, i, 1);
+    }
+
+    // Connect all edges in bipartite graph with capacity 1
+    for (int i = 1; i <= leftSize; i++) {
+        for (auto j : graph[i-1]) {
+            ff.addEdge(i, leftSize + j, 1);
+        }
+    }
+
+    // Connect all right vertices to sink with capacity 1
+    for (int i = 1; i <= rightSize; i++) {
+        ff.addEdge(leftSize + i, sink, 1);
+    }
+
+    // Max flow equals maximum matching size
+    return ff.maxFlow(source, sink);
+}
+```
+
+### Minimum Cut
+
+The Max Flow Min Cut theorem states that in a flow network, the maximum flow value equals the capacity of the minimum cut.
+
+```cpp
+vector<pair<int, int>> minCut(const vector<vector<int>>& capacity, int s, int t) {
+    int n = capacity.size();
+
+    // Find max flow
+    EdmondsKarp ek(n);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (capacity[i][j] > 0) {
+                ek.addEdge(i, j, capacity[i][j]);
+            }
+        }
+    }
+
+    int max_flow = ek.maxFlow(s, t);
+
+    // BFS to find vertices reachable from s in residual graph
+    vector<bool> visited(n, false);
+    queue<int> q;
+    q.push(s);
+    visited[s] = true;
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        for (int v = 0; v < n; v++) {
+            if (!visited[v] && ek.getResidualCapacity(u, v) > 0) {
+                visited[v] = true;
+                q.push(v);
+            }
+        }
+    }
+
+    // Find all edges from reachable to non-reachable vertices
+    vector<pair<int, int>> cut_edges;
+    for (int u = 0; u < n; u++) {
+        if (visited[u]) {
+            for (int v = 0; v < n; v++) {
+                if (!visited[v] && capacity[u][v] > 0) {
+                    cut_edges.push_back({u, v});
+                }
+            }
+        }
+    }
+
+    return cut_edges;
+}
+```
+
+### Maximum Flow with Vertex Capacities
+
+When vertices also have capacity constraints, the problem can be transformed by splitting each vertex into two.
+
+```cpp
+class VertexCapacityNetwork {
+private:
+    int V;
+    vector<vector<int>> capacity;
+
+public:
+    VertexCapacityNetwork(int vertices) : V(vertices) {
+        // Double the vertices (each vertex v becomes v_in and v_out)
+        capacity.resize(2*V + 2, vector<int>(2*V + 2, 0));
+    }
+
+    // Add edge from u to v with edge capacity ec
+    void addEdge(int u, int v, int ec) {
+        // Connect u_out to v_in
+        capacity[2*u + 1][2*v] = ec;
+    }
+
+    // Set capacity for vertex v
+    void setVertexCapacity(int v, int vc) {
+        // Connect v_in to v_out with vertex capacity
+        capacity[2*v][2*v + 1] = vc;
+    }
+
+    int maxFlow(int s, int t) {
+        // Adjust source and sink
+        int src = 2*s;    // source_in
+        int snk = 2*t+1;  // sink_out
+
+        // Create flow solver
+        EdmondsKarp ek(2*V + 2);
+        for (int i = 0; i < 2*V + 2; i++) {
+            for (int j = 0; j < 2*V + 2; j++) {
+                if (capacity[i][j] > 0) {
+                    ek.addEdge(i, j, capacity[i][j]);
+                }
+            }
+        }
+
+        return ek.maxFlow(src, snk);
+    }
+};
+```
+
+### Multi-Source Multi-Sink Flow
+
+Multiple sources and sinks can be handled by adding a super-source and super-sink.
+
+```cpp
+int multiSourceMultiSinkFlow(const vector<vector<int>>& capacity,
+                             const vector<int>& sources,
+                             const vector<int>& sinks) {
+    int n = capacity.size();
+    int superSource = n;
+    int superSink = n + 1;
+
+    // Create extended network
+    EdmondsKarp ek(n + 2);
+
+    // Add original edges
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (capacity[i][j] > 0) {
+                ek.addEdge(i, j, capacity[i][j]);
+            }
+        }
+    }
+
+    // Connect super-source to all sources
+    for (int s : sources) {
+        ek.addEdge(superSource, s, numeric_limits<int>::max());
+    }
+
+    // Connect all sinks to super-sink
+    for (int t : sinks) {
+        ek.addEdge(t, superSink, numeric_limits<int>::max());
+    }
+
+    return ek.maxFlow(superSource, superSink);
+}
+```
+
+## 8. Real-World Applications
+
+### Transportation Networks
+
+- **Application**: Optimizing the flow of vehicles, goods, or people through a transportation network.
+- **Challenge**: Handling time-dependent flows and multiple commodities.
+- **Solution**: Use Min-Cost Max-Flow with time-expanded networks.
+
+```cpp
+// Example of edge structure for transportation network
+struct TransportEdge {
+    int capacity;      // Maximum flow
+    int current_flow;  // Current flow
+    int travel_time;   // Time to traverse edge
+    int cost_per_unit; // Cost per unit flow
+
+    // Calculate total cost for this flow
+    int totalCost() const {
+        return current_flow * cost_per_unit;
+    }
+
+    // Calculate remaining capacity
+    int residualCapacity() const {
+        return capacity - current_flow;
+    }
+};
+```
+### Network Traffic Routing
+
+- **Application**: Routing packets in computer networks to maximize throughput or minimize latency.
+- **Challenge**: Meeting quality of service requirements.
+- **Solution**: Use multi-commodity flow with capacity constraints.
+
+```cpp
+// Edge structure for network packet routing
+struct RouteEdge {
+    int capacity;      // Maximum bandwidth
+    int delay;         // Transmission delay
+    int usage;         // Current usage
+    double congestion; // Congestion factor
+
+    // Calculate residual capacity
+    int residual() const {
+        return capacity - usage;
+    }
+
+    // Calculate effective cost based on congestion
+    double effectiveCost() const {
+        return delay * (1.0 + congestion * usage / capacity);
+    }
+};
+```
+
+### Image Segmentation
+
+- **Application**: Separating foreground from background in images.
+- **Challenge**: Finding optimal cut that separates object from background.
+- **Solution**: Model as min-cut problem where edges represent pixel similarity.
+
+```cpp
+// Graph construction for image segmentation
+void buildSegmentationGraph(vector<vector<int>>& image, FordFulkerson& ff) {
+    int rows = image.size();
+    int cols = image[0].size();
+    int source = rows * cols;     // Source node index
+    int sink = rows * cols + 1;   // Sink node index
+
+    // Add edges from source to foreground seeds and background seeds to sink
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            int node = i * cols + j;
+
+            // Connect source to pixels with high foreground probability
+            if (isForegroundSeed(image, i, j)) {
+                ff.addEdge(source, node, MAX_CAPACITY);
+            }
+
+            // Connect pixels with high background probability to sink
+            if (isBackgroundSeed(image, i, j)) {
+                ff.addEdge(node, sink, MAX_CAPACITY);
+            }
+
+            // Connect neighboring pixels with weights based on similarity
+            addNeighborEdges(image, ff, i, j, cols);
+        }
+    }
+}
+
+// Add edges between neighboring pixels
+void addNeighborEdges(vector<vector<int>>& image, FordFulkerson& ff, int i, int j, int cols) {
+    int dx[] = {0, 0, 1, -1};
+    int dy[] = {1, -1, 0, 0};
+    int node = i * cols + j;
+
+    for (int k = 0; k < 4; k++) {
+        int ni = i + dx[k];
+        int nj = j + dy[k];
+
+        if (ni >= 0 && ni < image.size() && nj >= 0 && nj < image[0].size()) {
+            int neighbor = ni * cols + nj;
+            int weight = calculateSimilarity(image[i][j], image[ni][nj]);
+            ff.addEdge(node, neighbor, weight);
+        }
+    }
+}
+```
+
+## 9. Performance Optimization Techniques
+
+### Using Custom Priority Queues
+
+For push-relabel algorithms, using a priority queue to select the highest-label vertices can improve performance.
+
+```cpp
+class OptimizedPushRelabel {
+private:
+    // Priority queue for highest-label vertices
+    struct VertexComparator {
+        const vector<int>& height;
+        VertexComparator(const vector<int>& h) : height(h) {}
+
+        bool operator()(int a, int b) {
+            return height[a] < height[b];
+        }
+    };
+
+    // Use priority queue with custom comparator
+    priority_queue<int, vector<int>, VertexComparator> pq;
+
+    // Other class members...
+
+public:
+    OptimizedPushRelabel(int vertices)
+        : pq(VertexComparator(height)), /* initialize other members */ {
+        // Constructor implementation
+    }
+
+    // Other methods...
+};
+```
+
+### Gap Relabeling Heuristic
+
+The gap heuristic identifies when no vertex has a certain height value, allowing us to relabel vertices above this gap.
+
+```cpp
+void gapRelabeling(vector<int>& height, vector<int>& count, int gap, int V) {
+    for (int i = 0; i < V; i++) {
+        if (height[i] > gap) {
+            // Set height to maximum to effectively remove from consideration
+            count[height[i]]--;
+            height[i] = max(height[i], V + 1);
+            count[height[i]]++;
+        }
+    }
+}
+```
+
+### Global Relabeling Heuristic
+
+Periodically recompute exact distances from vertices to the sink to improve the height function.
+
+```cpp
+void globalRelabeling(vector<vector<Edge>>& graph, vector<int>& height, int sink, int V) {
+    // Reset heights
+    fill(height.begin(), height.end(), V);
+    height[sink] = 0;
+
+    // BFS from sink
+    queue<int> q;
+    q.push(sink);
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        for (Edge& e : graph[u]) {
+            // Check for residual capacity from v to u
+            Edge& rev = graph[e.to][e.rev];
+            if (rev.capacity - rev.flow > 0 && height[e.to] == V) {
+                height[e.to] = height[u] + 1;
+                q.push(e.to);
+            }
+        }
+    }
+}
+```
+
+## 10. Advanced Network Flow Problems
+
+### Maximum Bipartite Matching with Preferences
+
+Matching problems where vertices have preferences for their matches can be solved using flow networks with capacity and cost.
+
+```cpp
+// Models a bipartite matching with ranked preferences
+pair<int, vector<pair<int, int>>> maxBipartiteMatchingWithPreferences(
+        const vector<vector<pair<int, int>>>& preferences, int leftSize, int rightSize) {
+    int n = leftSize + rightSize + 2;
+    int source = 0;
+    int sink = n - 1;
+
+    MinCostMaxFlow mcmf(n);
+
+    // Connect source to all left vertices with capacity 1
+    for (int i = 1; i <= leftSize; i++) {
+        mcmf.addEdge(source, i, 1, 0);  // capacity 1, cost 0
+    }
+
+    // Connect all preference edges with appropriate costs
+    for (int i = 1; i <= leftSize; i++) {
+        for (auto& pref : preferences[i-1]) {
+            int j = pref.first;
+            int rank = pref.second;
+            mcmf.addEdge(i, leftSize + j, 1, rank);  // capacity 1, cost = rank
+        }
+    }
+
+    // Connect all right vertices to sink with capacity 1
+    for (int i = 1; i <= rightSize; i++) {
+        mcmf.addEdge(leftSize + i, sink, 1, 0);  // capacity 1, cost 0
+    }
+
+    // Get max flow and min cost
+    auto result = mcmf.minCostMaxFlow(source, sink);
+
+    // Extract matching pairs
+    vector<pair<int, int>> matches;
+    for (int i = 1; i <= leftSize; i++) {
+        for (auto& edge : mcmf.getEdges(i)) {
+            if (edge.flow > 0 && edge.to > leftSize && edge.to < sink) {
+                matches.push_back({i, edge.to - leftSize});
+            }
+        }
+    }
+
+    return {result.first, matches};  // Return {max matching size, match pairs}
+}
+```
+
+### Project Selection Problem
+
+Determine which projects to select to maximize profit given dependencies between projects.
+
+```cpp
+// Project selection with dependencies and profits/costs
+int maxProjectProfit(vector<int>& profits, vector<int>& costs,
+                  vector<pair<int, int>>& dependencies) {
+    int n = profits.size();
+    int source = 2 * n;
+    int sink = 2 * n + 1;
+
+    // Create flow network
+    PushRelabel pr(2 * n + 2);
+
+    int totalProfit = 0;
+
+    // For each project
+    for (int i = 0; i < n; i++) {
+        // Split node into in and out
+        int in = i;
+        int out = i + n;
+
+        // Connect source to project with profit
+        if (profits[i] > 0) {
+            pr.addEdge(source, in, profits[i]);
+            totalProfit += profits[i];
+        } else {
+            // Project costs money, connect to sink
+            pr.addEdge(out, sink, -profits[i]);
+        }
+
+        // Internal edge with infinite capacity
+        pr.addEdge(in, out, INT_MAX);
+    }
+
+    // Add dependency edges
+    for (auto& dep : dependencies) {
+        int from = dep.first;
+        int to = dep.second;
+        // If we take "from", we must take "to"
+        pr.addEdge(from + n, to, INT_MAX);
+    }
+
+    // Max flow equals min cut which equals max profit
+    int minCut = pr.maxFlow(source, sink);
+
+    // Return max profit
+    return totalProfit - minCut;
+}
+```
+
+### Baseball Elimination Problem
+
+Determine if a team can still win the championship.
+
+```cpp
+bool canTeamWin(vector<int>& wins, vector<int>& remaining,
+               vector<vector<int>>& games, int team) {
+    int n = wins.size();
+
+    // Calculate maximum possible wins for the team
+    int maxWins = wins[team] + remaining[team];
+
+    // Create flow network
+    int source = n;
+    int sink = n + 1;
+    int gameNodeOffset = n + 2;
+
+    // Count total remaining games between other teams
+    int totalGames = 0;
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (i != team && j != team) {
+                totalGames += games[i][j];
+            }
+        }
+    }
+
+    // Network size: teams + source + sink + game nodes
+    Dinic dinic(n + 2 + totalGames);
+
+    // Add edges from game nodes to teams
+    int gameNodeIndex = gameNodeOffset;
+    for (int i = 0; i < n; i++) {
+        if (i == team) continue;
+
+        // Team i can win at most (maxWins - wins[i]) more games
+        if (wins[i] >= maxWins) {
+            // Team has already won too many games
+            return false;
+        }
+
+        dinic.addEdge(i, sink, maxWins - wins[i]);
+
+        // Add game nodes and connect to teams
+        for (int j = i + 1; j < n; j++) {
+            if (j == team || games[i][j] == 0) continue;
+
+            dinic.addEdge(source, gameNodeIndex, games[i][j]);
+            dinic.addEdge(gameNodeIndex, i, INT_MAX);
+            dinic.addEdge(gameNodeIndex, j, INT_MAX);
+            gameNodeIndex++;
+        }
+    }
+
+    // Check if max flow equals sum of remaining games
+    return dinic.maxFlow(source, sink) == totalGames;
+}
+```
+
+## 11. Summary and Best Practices
+
+### Algorithm Selection Guide
+
+| Algorithm | Best Use Case | Time Complexity | Space Complexity |
+|-----------|---------------|-----------------|-----------------|
+| **Ford-Fulkerson** | Simple networks with integer capacities | O(E × max_flow) | O(V²) |
+| **Edmonds-Karp** | Mid-sized networks | O(V × E²) | O(V²) |
+| **Dinic's** | Large networks with bottlenecks | O(V² × E) | O(V + E) |
+| **Push-Relabel** | Dense graphs with many augmenting paths | O(V³) | O(V²) |
+| **Min-Cost Max-Flow** | Flow problems with costs | O(V × E²) | O(V + E) |
+
+### Implementation Tips
+
+1. **Data Structures**:
+   - Use adjacency lists over matrices for large, sparse graphs
+   - Consider specialized heaps for Push-Relabel variants
+
+2. **Numerical Stability**:
+   - Use integer capacities when possible
+   - For floating-point capacities, use epsilon comparisons
+
+3. **Performance Tricks**:
+   - Implement the gap heuristic for Push-Relabel
+   - Use periodic global relabeling
+   - Start with simpler algorithms and optimize as needed
+
+### Common Pitfalls
+
+1. **Incorrect residual graph construction**: Ensure reverse edges are properly maintained
+2. **Ignoring numerical precision**: Be careful with floating-point comparisons
+3. **Inefficient path finding**: Choose appropriate search algorithm for network characteristics
+4. **Overflow**: Use appropriate data types for large networks and flows
+5. **Missing source/sink connections**: Verify all necessary connections are created
+
+## 12. Real-World Applications
+
+### Web Crawling Scheduling
+
+Network flow algorithms can optimize the scheduling of web crawlers to maximize coverage while respecting bandwidth constraints.
+
+```cpp
+// Model for web crawler scheduling
+struct CrawlTarget {
+    string domain;
+    int priority;
+    int pageCount;
+    int bandwidth;
+};
+
+// Schedule crawling using min-cost max-flow
+vector<pair<string, int>> scheduleCrawling(
+        vector<CrawlTarget>& targets, int maxBandwidth, int timeSlots) {
+    int n = targets.size();
+    int source = n * timeSlots;
+    int sink = source + 1;
+
+    MinCostMaxFlow mcmf(n * timeSlots + 2);
+
+    // Connect source to all targets in first time slot
+    for (int i = 0; i < n; i++) {
+        mcmf.addEdge(source, i, targets[i].pageCount, 0);
+    }
+
+    // Connect targets across time slots with bandwidth constraints
+    for (int t = 0; t < timeSlots - 1; t++) {
+        for (int i = 0; i < n; i++) {
+            int currentNode = t * n + i;
+            int nextNode = (t + 1) * n + i;
+
+            // Domain can be crawled with limited bandwidth per slot
+            mcmf.addEdge(currentNode, nextNode, targets[i].bandwidth, -targets[i].priority);
+        }
+    }
+
+    // Connect last time slot to sink
+    for (int i = 0; i < n; i++) {
+        int node = (timeSlots - 1) * n + i;
+        mcmf.addEdge(node, sink, INT_MAX, 0);
+    }
+
+    // Get optimal schedule
+    auto result = mcmf.minCostMaxFlow(source, sink);
+
+    // Extract schedule
+    vector<pair<string, int>> schedule;
+    for (int i = 0; i < n; i++) {
+        for (int t = 0; t < timeSlots - 1; t++) {
+            int currentNode = t * n + i;
+            int nextNode = (t + 1) * n + i;
+
+            int flow = mcmf.getFlow(currentNode, nextNode);
+            if (flow > 0) {
+                schedule.push_back({targets[i].domain, flow});
+            }
+        }
+    }
+
+    return schedule;
+}
+```
+
+### Resource Allocation in Cloud Computing
+
+Network flow can model resource allocation in virtualized environments to optimize VM placement.
+
+```cpp
+// Modeling cloud resource allocation
+struct VirtualMachine {
+    int id;
+    int cpu;
+    int memory;
+    int storage;
+    int priority;
+};
+
+struct PhysicalServer {
+    int id;
+    int cpu;
+    int memory;
+    int storage;
+};
+
+// Optimally allocate VMs to servers
+vector<pair<int, int>> allocateVMs(
+        vector<VirtualMachine>& vms, vector<PhysicalServer>& servers) {
+    int n = vms.size();
+    int m = servers.size();
+    int source = n + m;
+    int sink = n + m + 1;
+
+    // Create min-cost max-flow solver
+    MinCostMaxFlow mcmf(n + m + 2);
+
+    // Connect source to VMs
+    for (int i = 0; i < n; i++) {
+        mcmf.addEdge(source, i, 1, 0);  // Each VM must be placed exactly once
+    }
+
+    // Connect VMs to compatible servers
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            // Check if server j can host VM i
+            if (servers[j].cpu >= vms[i].cpu &&
+                servers[j].memory >= vms[i].memory &&
+                servers[j].storage >= vms[i].storage) {
+
+                // Cost is a function of priority and resource utilization
+                int cost = calculateAllocationCost(vms[i], servers[j]);
+                mcmf.addEdge(i, n + j, 1, cost);
+            }
+        }
+    }
+
+    // Connect servers to sink
+    for (int j = 0; j < m; j++) {
+        // Each server has capacity based on its resources
+        int capacity = estimateServerCapacity(servers[j]);
+        mcmf.addEdge(n + j, sink, capacity, 0);
+    }
+
+    // Solve min-cost max-flow
+    auto result = mcmf.minCostMaxFlow(source, sink);
+
+    // Extract allocation results
+    vector<pair<int, int>> allocation;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            if (mcmf.getFlow(i, n + j) > 0) {
+                allocation.push_back({vms[i].id, servers[j].id});
+            }
+        }
+    }
+
+    return allocation;
+}
+```
+
+## 13. Conclusion
+
+Network flow algorithms represent a powerful class of techniques for solving a wide range of optimization problems. From the classic Ford-Fulkerson method to specialized algorithms like Push-Relabel and Min-Cost Max-Flow, these approaches provide efficient solutions to complex network problems.
+
+Key takeaways:
+
+1. **Algorithmic choice matters**: Select the appropriate algorithm based on your network characteristics and constraints.
+
+2. **Modeling is critical**: Many real-world problems can be transformed into network flow problems through creative modeling.
+
+3. **Performance optimizations**: Advanced techniques like gap relabeling and global relabeling can significantly improve algorithm performance.
+
+4. **Implementation considerations**: Carefully handle residual graphs, vertex capacities, and multiple sources/sinks for robust solutions.
+
+5. **Applications are vast**: From image processing to resource allocation, network flow algorithms have broad applications across computer science and operations research.
+
+By mastering these algorithms and the associated transformation techniques, you can tackle complex optimization problems with elegant and efficient solutions.
