@@ -4,7 +4,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Command,
   CreditCard,
   File,
   FileText,
@@ -29,7 +28,40 @@ import {
 export type Icon = LucideIcon
 
 export const Icons = {
-  logo: Command,
+  logo: ({ ...props }: LucideProps) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="40"
+      height="40"
+      viewBox="0 0 200 200"
+      {...props}
+    >
+      <rect width="200" height="200" rx="100" fill="white" />
+      <circle cx="100" cy="100" r="80" stroke="#1a1a1a" strokeWidth="4" fill="none" />
+      <path
+        d="M60,130 Q75,80 100,100 Q125,120 140,70"
+        fill="none"
+        stroke="#1a1a1a"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        filter="url(#glow)"
+      />
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feComponentTransfer in="SourceAlpha">
+            <feFuncA type="table" tableValues="0 1" />
+          </feComponentTransfer>
+          <feGaussianBlur stdDeviation="4" result="blurred" />
+          <feMerge>
+            <feMergeNode in="blurred" />
+            <feMergeNode in="SourceAlpha" />
+          </feMerge>
+        </filter>
+      </defs>
+      <circle cx="140" cy="70" r="6" fill="#1a1a1a" />
+    </svg>
+  ),
   close: X,
   spinner: Loader2,
   chevronLeft: ChevronLeft,
