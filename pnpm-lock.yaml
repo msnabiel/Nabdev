@@ -170,6 +170,9 @@ importers:
       fs:
         specifier: 0.0.1-security
         version: 0.0.1-security
+      lucide-preact:
+        specifier: ^0.507.0
+        version: 0.507.0(preact@10.26.5)
       lucide-react:
         specifier: ^0.92.0
         version: 0.92.0(prop-types@15.8.1)(react@18.3.1)
@@ -3758,6 +3761,11 @@ packages:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
 
+  lucide-preact@0.507.0:
+    resolution: {integrity: sha512-LI4JNCsSffNDPtP8/+X65gaeMZAgeAAiGVTf89pmxE8wcJnuA8Xn1AhBqmr2BvXKPh/zpUX3rIGH3c1qX7/sXg==}
+    peerDependencies:
+      preact: ^10.5.13
+
   lucide-react@0.92.0:
     resolution: {integrity: sha512-rKnAxjhDPvvmKvvij+oeA+qJicQwXf+4hfANIrMPlDiBKJfrDv1HGF496ZiTBevcrRJ/8/C3rrnUb77EAhHHlA==}
     peerDependencies:
@@ -5484,7 +5492,7 @@ snapshots:
       '@types/node': 20.5.1
       chalk: 4.1.2
       cosmiconfig: 8.3.6(typescript@5.8.3)
-      cosmiconfig-typescript-loader: 4.4.0(@types/node@20.5.1)(cosmiconfig@8.3.6(typescript@5.8.3))(ts-node@10.9.2(@types/node@20.5.1)(typescript@5.8.3))(typescript@5.8.3)
+      cosmiconfig-typescript-loader: 4.4.0(@types/node@20.5.1)(cosmiconfig@8.3.6(typescript@5.8.3))(ts-node@10.9.2(@types/node@18.19.87)(typescript@5.8.3))(typescript@5.8.3)
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       lodash.uniq: 4.5.0
@@ -7784,7 +7792,7 @@ snapshots:
 
   core-util-is@1.0.3: {}
 
-  cosmiconfig-typescript-loader@4.4.0(@types/node@20.5.1)(cosmiconfig@8.3.6(typescript@5.8.3))(ts-node@10.9.2(@types/node@20.5.1)(typescript@5.8.3))(typescript@5.8.3):
+  cosmiconfig-typescript-loader@4.4.0(@types/node@20.5.1)(cosmiconfig@8.3.6(typescript@5.8.3))(ts-node@10.9.2(@types/node@18.19.87)(typescript@5.8.3))(typescript@5.8.3):
     dependencies:
       '@types/node': 20.5.1
       cosmiconfig: 8.3.6(typescript@5.8.3)
@@ -9072,6 +9080,10 @@ snapshots:
   lru-cache@6.0.0:
     dependencies:
       yallist: 4.0.0
+
+  lucide-preact@0.507.0(preact@10.26.5):
+    dependencies:
+      preact: 10.26.5
 
   lucide-react@0.92.0(prop-types@15.8.1)(react@18.3.1):
     dependencies:
