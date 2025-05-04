@@ -69,6 +69,7 @@
     "contentlayer": "^0.3.4",
     "date-fns": "^2.30.0",
     "form-data": "^4.0.2",
+    "framer-motion": "^12.9.4",
     "fs": "0.0.1-security",
     "lucide-preact": "^0.507.0",
     "lucide-react": "^0.92.0",
